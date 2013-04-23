@@ -2,6 +2,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:unittest/unittest.dart';
+import 'package:unittest/mock.dart';
 import 'lib/router.dart';
 
 void main() {
@@ -117,5 +118,26 @@ void main() {
         throwsArgumentError
     );
   });
+
+  test('Simple transition unloads old and loads new view.', () {
+    var oldView = new Mock();
+    var newView = new Mock();
+    var parameters = {'var1': 'value1', 'var2': 'value2'};
+
+    simpleTransition(oldView, newView, parameters);
+
+    oldView.getLogs(callsTo('unload')).verify(happenedOnce);
+    newView.getLogs(callsTo('load', parameters)).verify(happenedOnce);
+  });
+
+  test('Simple transition does not call unload on null view.', () {
+    var newView = new Mock();
+    var parameters = {'var1': 'value1', 'var2': 'value2'};
+
+    simpleTransition(null, newView, parameters);
+
+    newView.getLogs(callsTo('load', parameters)).verify(happenedOnce);
+  });
+
 
 }

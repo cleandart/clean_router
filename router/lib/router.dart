@@ -123,3 +123,16 @@ class Router {
     throw new ArgumentError('No route matches url "$url".');
   }
 }
+
+/**
+ * Simple transition handler. Calls [unload] method on the [oldView] and the
+ * [load] method with [parameters] on the [newView].
+ */
+void simpleTransition(oldView, newView, parameters) {
+  // If this is the first time the page is loaded, [oldView] can be null, then
+  // there is nothing to unload.
+  if (oldView != null) {
+    oldView.unload();
+  }
+  newView.load(parameters);
+}
