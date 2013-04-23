@@ -19,31 +19,33 @@ void main() {
       throwsFormatException
     );
     expect(
-        () => new Route("/variable-must-begin-with/{_alpha}/"),
-        throwsFormatException
+      () => new Route("/variable-must-begin-with/{_alpha}/"),
+      throwsFormatException
     );
   });
 
-  var route = new Route("/my-site/{var1}/{var2}/your-site/");
+  var route1 = new Route("/my-site/{var1}/{var2}/your-site/");
+  var route2 = new Route("/just/static/one");
+  var route3 = new Route("/route/{one_parameter}/");
 
   test('Basic route matching', () {
-    expect(route.match("/my-site/"), isNull);
+    expect(route1.match("/my-site/"), isNull);
     expect(
-      route.match("/my-site/432/123/your-site/"),
+      route1.match("/my-site/432/123/your-site/"),
       equals({'var1': '432', 'var2': '123'})
     );
     expect(
-      route.match("/my_site/123/321/your-site/"),
+      route1.match("/my_site/123/321/your-site/"),
       isNull
     );
   });
   test('Basic route generation', () {
     expect(
-        route.path({'var1': 'Hodnota', 'var2': 'Zloba'}),
+        route1.path({'var1': 'Hodnota', 'var2': 'Zloba'}),
         equals('/my-site/Hodnota/Zloba/your-site/')
     );
     expect(
-        () => route.path({'var1': 'Value'}),
+        () => route1.path({'var1': 'Value'}),
         throwsFormatException
     );
   });
@@ -52,12 +54,68 @@ void main() {
     var params1 = {'var1': 'hello/dolly', 'var2': 'Ok'};
     var params2 = {'var1': 'hello darling', 'var2': 'Here/we/are'};
     expect(
-      route.match(route.path(params1)),
+      route1.match(route1.path(params1)),
       equals(params1)
     );
     expect(
-      route.match(route.path(params2)),
+      route1.match(route1.path(params2)),
       equals(params2)
     );
   });
+
+  var router = new Router('http://www.google.com', {
+    'my-site': route1,
+    'static': route2,
+    'one-param': route3,
+  });
+
+  test('Router route', () {
+    expect(
+      router.routePath('static', {}),
+      equals('/just/static/one')
+    );
+    expect(
+      router.routeUrl('static', {}),
+      equals('http://www.google.com/just/static/one')
+    );
+    expect(
+      router.routePath('my-site', {'var1': 'value1', 'var2': 'value2'}),
+      equals('/my-site/value1/value2/your-site/')
+    );
+    expect(
+      router.routeUrl('my-site', {'var1': 'value1', 'var2': 'value2'}),
+      equals('http://www.google.com/my-site/value1/value2/your-site/')
+    );
+    expect(
+      router.routePath('one-param', {'one_parameter': 'some_value'}),
+      equals('/route/some_value/')
+    );
+    expect(
+      router.routeUrl('one-param', {'one_parameter': 'some_value'}),
+      equals('http://www.google.com/route/some_value/')
+    );
+
+  });
+
+  test('Router route with undefined route throws Error', () {
+    expect(
+      () => router.routePath('invalid-route', {}),
+      throwsArgumentError
+    );
+
+  });
+
+  test('Route matching', () {
+    var match = router.match('/my-site/value1/value2/your-site/');
+    expect(match[0], equals('my-site'));
+    expect(match[1], equals({'var1': 'value1', 'var2': 'value2'}));
+  });
+
+  test('Route matching undefined route throws Error', () {
+    expect(
+        () => router.match('/invalid-route'),
+        throwsArgumentError
+    );
+  });
+
 }

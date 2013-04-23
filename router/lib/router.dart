@@ -95,9 +95,31 @@ class Route {
 }
 
 class Router {
-  final Map<String, List> routes;
+  final Map<String, Route> routes;
+  String host;
+  String activeRoute;
 
-  Router(this.routes) {
+  Router(this.host, this.routes);
 
+  String routePath(String routeName, Map variables) {
+    var route = this.routes[routeName];
+    if (route == null) {
+      throw new ArgumentError('Router does not contain a route "$routeName".');
+    }
+    return this.routes[routeName].path(variables);
+  }
+
+  String routeUrl(String routeName, Map variables) {
+    return this.host + this.routePath(routeName, variables);
+  }
+
+  List match(String url) {
+    for (var key in this.routes.keys) {
+      var match = this.routes[key].match(url);
+      if (match != null) {
+        return [key, match];
+      }
+    }
+    throw new ArgumentError('No route matches url "$url".');
   }
 }
