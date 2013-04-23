@@ -4,6 +4,10 @@
 import 'package:unittest/unittest.dart';
 import 'package:unittest/mock.dart';
 import 'lib/router.dart';
+import 'dart:html';
+
+class HistoryMock extends Mock implements History {}
+class RouterMock extends Mock implements Router {}
 
 void main() {
   test('Unsupported route format', () {
@@ -137,6 +141,48 @@ void main() {
     simpleTransition(null, newView, parameters);
 
     newView.getLogs(callsTo('load', parameters)).verify(happenedOnce);
+  });
+
+  test('PageNavigator can navigate to url and call transitionHandler', () {
+    var data = [
+      {
+        'url': '/sample/url/',
+        'route': 'route1',
+        'params': {'var1': 'value1'},
+        'view': new Mock(),
+      },
+      {
+        'url': '/other/url/',
+        'route': 'route2',
+        'params': {'var2': 'value2'},
+        'view': new Mock(),
+      },
+    ];
+    var history = new HistoryMock();
+    var router = new RouterMock();
+    var views = {};
+    var transitions;
+    var transitionHandler = (oldView, newView, parameters)
+        => transitions = [oldView, newView, parameters];
+
+    for (var sample in data) {
+      router.when(callsTo('match', sample['url']))
+            .alwaysReturn([sample['route'], sample['params']]);
+      views[sample['route']] = sample['view'];
+    }
+
+    var navigator = new PageNavigator(
+        history, router, views, transitionHandler);
+
+    navigator.navigate(data[0]['url']);
+    expect(transitions, equals([null, data[0]['view'], data[0]['params']]));
+    navigator.navigate(data[1]['url']);
+    expect(transitions,
+        equals([data[0]['view'], data[1]['view'], data[1]['params']])
+    );
+
+    history.getLogs(callsTo('pushState')).verify(happenedExactly(2));
+
   });
 
 

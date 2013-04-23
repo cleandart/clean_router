@@ -5,6 +5,7 @@
 library vacuum.router;
 import "dart:core";
 import "dart:uri";
+import "dart:html";
 
 /**
  * Maps [Map] of variables to [String] Url component and vice versa.
@@ -135,4 +136,21 @@ void simpleTransition(oldView, newView, parameters) {
     oldView.unload();
   }
   newView.load(parameters);
+}
+
+class PageNavigator {
+  final History history;
+  final Router router;
+  final Map<String, dynamic> views;
+  final transitionHandler;
+  var activeView;
+  PageNavigator(this.history, this.router, this.views, this.transitionHandler);
+  void navigate(url) {
+    var match = this.router.match(url);
+    var newView = this.views[match[0]];
+    this.transitionHandler(activeView, newView, match[1]);
+    this.activeView = newView;
+    this.history.pushState(null, null, url);
+  }
+
 }
