@@ -95,25 +95,39 @@ class Route {
   }
 }
 
+/**
+ * [Router] consists of multiple named [Route]s and provides methods for
+ * translating [Route]s to url/path and vice versa.
+ */
 class Router {
   final Map<String, Route> routes;
   String host;
-  String activeRoute;
 
   Router(this.host, this.routes);
 
-  String routePath(String routeName, Map variables) {
+  /**
+   * Returns path part of the url corresponding to the given [routeName] and
+   * [parameters].
+   */
+  String routePath(String routeName, Map parameters) {
     var route = this.routes[routeName];
     if (route == null) {
       throw new ArgumentError('Router does not contain a route "$routeName".');
     }
-    return this.routes[routeName].path(variables);
+    return this.routes[routeName].path(parameters);
   }
 
-  String routeUrl(String routeName, Map variables) {
-    return this.host + this.routePath(routeName, variables);
+  /**
+   * Returns the whole url corresponding to the given [routeName] and
+   * [parameters].
+   */
+  String routeUrl(String routeName, Map parameters) {
+    return this.host + this.routePath(routeName, parameters);
   }
 
+  /**
+   * Returns the List [[routeName, matchedParameters]] matching the [url].
+   */
   List match(String url) {
     for (var key in this.routes.keys) {
       var match = this.routes[key].match(url);
