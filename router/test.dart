@@ -39,11 +39,11 @@ void main() {
   });
   test('Basic route generation', () {
     expect(
-        route.getUrl({'var1': 'Hodnota', 'var2': 'Zloba'}),
+        route.path({'var1': 'Hodnota', 'var2': 'Zloba'}),
         equals('/my-site/Hodnota/Zloba/your-site/')
     );
     expect(
-        () => route.getUrl({'var1': 'Value'}),
+        () => route.path({'var1': 'Value'}),
         throwsFormatException
     );
   });
@@ -52,11 +52,11 @@ void main() {
     var params1 = {'var1': 'hello/dolly', 'var2': 'Ok'};
     var params2 = {'var1': 'hello darling', 'var2': 'Here/we/are'};
     expect(
-      route.match(route.getUrl(params1)),
+      route.match(route.path(params1)),
       equals(params1)
     );
     expect(
-      route.match(route.getUrl(params2)),
+      route.match(route.path(params2)),
       equals(params2)
     );
   });

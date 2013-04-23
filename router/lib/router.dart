@@ -1,5 +1,6 @@
-// Copyright (c) 2013, Samuel Hapak. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
+// Copyright (c) 2013, Samuel Hapak. All rights reserved. Use of this source
+// code is governed by a BSD-style license that can be found in the LICENSE
+// file.
 
 library vacuum.router;
 import "dart:core";
@@ -77,7 +78,7 @@ class Route {
   /**
    * Constructs the [url] using the [Route] pattern and values in [variables].
    */
-  String getUrl(Map variables) {
+  String path(Map variables) {
     var parts = [];
     for (var part in this._urlParts) {
       var value = part['value'];
@@ -91,5 +92,12 @@ class Route {
     }
     return parts.join('/');
   }
+}
 
+class Router {
+  final Map<String, List> routes;
+
+  Router(this.routes) {
+
+  }
 }
