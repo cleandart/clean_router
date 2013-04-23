@@ -1,0 +1,8 @@
+name: router
+version: 0.0.0
+author: Samuel Hapák <samuel.hapak@gmail.com>
+description: A sample web application
+homepage: https://github.com/hleumas/dart-router
+dependencies:
+  unittest: any
+  browser: any
