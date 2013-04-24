@@ -196,8 +196,9 @@ class PageNavigator {
       match[1]
     );
     this.activeRoute = match[0];
-    this.history.pushState(null, null, url);
+    this.history.pushState(null, '', url);
 
+    // Stop watching parameters of the previous view.
     if (this.activeWatchDisposer != null) {
       this.activeWatchDisposer();
     }
@@ -221,20 +222,19 @@ PageNavigator createNavigator(List rules,
     views[rule[0]] = rule[2];
   }
   var router = new Router(window.location.host, routes);
-  var navigator =  new PageNavigator(watchers.watch, window.history, router, views,
+  var navigator =  new PageNavigator(observe, window.history, router, views,
     transitionHandler);
 
   delegateOn(window, 'click', (el) => el is AnchorElement, (ev, el) {
-    var url = el.href;
     // Ignore anchors without href.
-    if (url == null) {
+    if (el.href == null) {
       return;
     }
     // Ignore urls pointing outside of the web.
-    if (url.startsWith('http://') || url.startsWith('https://')) {
+    if (el.host != window.location.host) {
       return;
     }
-    navigator.navigate(url);
+    navigator.navigate(el.pathname);
     ev.preventDefault();
   });
 
