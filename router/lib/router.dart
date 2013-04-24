@@ -6,7 +6,7 @@ library vacuum.router;
 import "dart:core";
 import "dart:uri";
 import "dart:html";
-import 'package:web_ui/observe.dart';
+import 'package:web_ui/web_ui.dart';
 import 'package:delegate/delegate.dart';
 
 
