@@ -155,6 +155,10 @@ void simpleTransition(oldView, newView, parameters) {
   newView.load(parameters);
 }
 
+/**
+ * [PageNavigator] wires together [History] management, [Route] matching and
+ * view rendering.
+ */
 class PageNavigator {
   final observe;
   final History history;
@@ -172,6 +176,18 @@ class PageNavigator {
     this.transitionHandler
     );
 
+  /**
+   * Navigates to the given [url] and renders the page.
+   *
+   * This consits of the following steps:
+   *
+   * 1. Match the [url] against the [Router] [Route]s
+   * 2. Matches the [Route] to the corresponding view
+   * 3. Handles the transition from current view to the matched one
+   * 4. Pushes new [url] to the [History]
+   * 5. Starts monitoring [Route] parameters for changes and automatically
+   *    updates the [url] with [History.replaceState].
+   */
   void navigate(url) {
     var match = this.router.match(url);
     this.transitionHandler(
