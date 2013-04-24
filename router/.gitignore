@@ -1,3 +1,5 @@
 packages
 lib/docs
 pubspec.lock
+.buildlog
+out/
