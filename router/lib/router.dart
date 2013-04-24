@@ -6,7 +6,6 @@ library vacuum.router;
 import "dart:core";
 import "dart:uri";
 import "dart:html";
-import 'package:web_ui/watcher.dart' as watchers;
 import 'package:web_ui/observe.dart';
 import 'package:delegate/delegate.dart';
 
@@ -157,7 +156,7 @@ void simpleTransition(oldView, newView, parameters) {
 }
 
 class PageNavigator {
-  final watch;
+  final observe;
   final History history;
   final Router router;
   final Map<String, dynamic> views;
@@ -166,7 +165,7 @@ class PageNavigator {
   var activeWatchDisposer;
 
   PageNavigator(
-    this.watch,
+    this.observe,
     this.history,
     this.router,
     this.views,
@@ -187,8 +186,9 @@ class PageNavigator {
       this.activeWatchDisposer();
     }
 
-    this.activeWatchDisposer = this.watch(match[1], (e) {
-      this.history.replaceState(null, null,
+    // Automatically update the [url] if the parameters got changed.
+    this.activeWatchDisposer = this.observe(match[1], (e) {
+      this.history.replaceState(null, '',
         this.router.routePath(this.activeRoute, e.newValue)
       );
     });
