@@ -3,6 +3,8 @@
 
 import 'package:unittest/unittest.dart';
 import 'package:unittest/mock.dart';
+import 'package:web_ui/watcher.dart' as watchers;
+import 'package:web_ui/observe.dart';
 import 'lib/router.dart';
 import 'dart:html';
 
@@ -42,6 +44,13 @@ void main() {
     expect(
       route1.match("/my_site/123/321/your-site/"),
       isNull
+    );
+  });
+
+  test('Map returned from route matching is ObservableMap', () {
+    expect(
+      route1.match('/my-site/432/123/your-site/'),
+      new isInstanceOf<ObservableMap>()
     );
   });
   test('Basic route generation', () {
@@ -147,17 +156,25 @@ void main() {
     var data = [
       {
         'url': '/sample/url/',
+        'newurl': '/sample/new/url/',
         'route': 'route1',
         'params': {'var1': 'value1'},
         'view': new Mock(),
       },
       {
         'url': '/other/url/',
+        'newurl': '/other/new/url',
         'route': 'route2',
         'params': {'var2': 'value2'},
         'view': new Mock(),
       },
     ];
+    var disposedWatches = [];
+    var registeredWatch = [];
+    var watch = (target, callback) {
+      registeredWatch = [target, callback];
+      return () => disposedWatches.add(target);
+    };
     var history = new HistoryMock();
     var router = new RouterMock();
     var views = {};
@@ -168,11 +185,13 @@ void main() {
     for (var sample in data) {
       router.when(callsTo('match', sample['url']))
             .alwaysReturn([sample['route'], sample['params']]);
+      router.when(callsTo('routePath', sample['route']))
+            .alwaysReturn(sample['newurl']);
       views[sample['route']] = sample['view'];
     }
 
     var navigator = new PageNavigator(
-        history, router, views, transitionHandler);
+        watch, history, router, views, transitionHandler);
 
     navigator.navigate(data[0]['url']);
     expect(transitions, equals([null, data[0]['view'], data[0]['params']]));
@@ -182,6 +201,14 @@ void main() {
     );
 
     history.getLogs(callsTo('pushState')).verify(happenedExactly(2));
+
+    registeredWatch[1](
+      new ChangeNotification({'var2': 'value2'}, {'var2': 'value3'})
+    );
+
+    history.getLogs(callsTo('replaceState')).verify(happenedOnce);
+
+    expect(disposedWatches[0], equals(data[0]['params']));
 
   });
 

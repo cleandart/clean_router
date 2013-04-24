@@ -6,6 +6,9 @@ library vacuum.router;
 import "dart:core";
 import "dart:uri";
 import "dart:html";
+import 'package:web_ui/watcher.dart' as watchers;
+import 'package:web_ui/observe.dart';
+
 
 /**
  * Maps [Map] of variables to [String] Url component and vice versa.
@@ -59,7 +62,7 @@ class Route {
    * Matches the [url] against the [Route] pattern and returns [Map] of matched
    * parameters or [null] if the Route does not match.
    */
-  Map match(String url) {
+  ObservableMap match(String url) {
     var match = this._matchExp.firstMatch(url);
 
     // If the [url] does not match, returns [null].
@@ -68,7 +71,7 @@ class Route {
     }
 
     // Decode [url] parameters and fill them into [Map].
-    Map result = new Map();
+    ObservableMap result = new ObservableMap();
     for (var i = 0; i < this._variables.length; i++) {
       result[this._variables[i]] = decodeUriComponent(match.group(i+1));
     }
@@ -153,18 +156,41 @@ void simpleTransition(oldView, newView, parameters) {
 }
 
 class PageNavigator {
+  final watch;
   final History history;
   final Router router;
   final Map<String, dynamic> views;
   final transitionHandler;
-  var activeView;
-  PageNavigator(this.history, this.router, this.views, this.transitionHandler);
+  var activeRoute;
+  var activeWatchDisposer;
+
+  PageNavigator(
+    this.watch,
+    this.history,
+    this.router,
+    this.views,
+    this.transitionHandler
+    );
+
   void navigate(url) {
     var match = this.router.match(url);
-    var newView = this.views[match[0]];
-    this.transitionHandler(activeView, newView, match[1]);
-    this.activeView = newView;
+    this.transitionHandler(
+      this.views[activeRoute],
+      this.views[match[0]],
+      match[1]
+    );
+    this.activeRoute = match[0];
     this.history.pushState(null, null, url);
+
+    if (this.activeWatchDisposer != null) {
+      this.activeWatchDisposer();
+    }
+
+    this.activeWatchDisposer = this.watch(match[1], (e) {
+      this.history.replaceState(null, null,
+        this.router.routePath(this.activeRoute, e.newValue)
+      );
+    });
   }
 
 }

@@ -6,4 +6,5 @@ homepage: https://github.com/hleumas/dart-router
 dependencies:
   unittest: any
   browser: any
+  web_ui: any
   delegate: any
