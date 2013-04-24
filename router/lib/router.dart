@@ -8,6 +8,7 @@ import "dart:uri";
 import "dart:html";
 import 'package:web_ui/watcher.dart' as watchers;
 import 'package:web_ui/observe.dart';
+import 'package:delegate/delegate.dart';
 
 
 /**
@@ -193,4 +194,36 @@ class PageNavigator {
     });
   }
 
+}
+
+PageNavigator createNavigator(List rules,
+  [transitionHandler = simpleTransition]) {
+  var routes = {};
+  var views = {};
+  for (var rule in rules) {
+    routes[rule[0]] = rule[1];
+    views[rule[0]] = rule[2];
+  }
+  var router = new Router(window.location.host, routes);
+  var navigator =  new PageNavigator(watchers.watch, window.history, router, views,
+    transitionHandler);
+
+  delegateOn(window, 'click', (el) => el is AnchorElement, (ev, el) {
+    var url = el.href;
+    // Ignore anchors without href.
+    if (url == null) {
+      return;
+    }
+    // Ignore urls pointing outside of the web.
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return;
+    }
+    navigator.navigate(url);
+    ev.preventDefault();
+  });
+
+  // Initialize routing with current url.
+  navigator.navigate(window.location.pathname);
+
+  return navigator;
 }
