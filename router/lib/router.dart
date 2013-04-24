@@ -188,7 +188,7 @@ class PageNavigator {
    * 5. Starts monitoring [Route] parameters for changes and automatically
    *    updates the [url] with [History.replaceState].
    */
-  void navigate(url) {
+  void navigate(url, [withoutPush = false]) {
     var match = this.router.match(url);
     this.transitionHandler(
       this.views[activeRoute],
@@ -196,7 +196,9 @@ class PageNavigator {
       match[1]
     );
     this.activeRoute = match[0];
-    this.history.pushState(null, '', url);
+    if (!withoutPush) {
+      this.history.pushState(null, '', url);
+    }
 
     // Stop watching parameters of the previous view.
     if (this.activeWatchDisposer != null) {
@@ -237,6 +239,10 @@ PageNavigator createNavigator(List rules,
     navigator.navigate(el.pathname);
     ev.preventDefault();
   });
+
+  window.onPopState.listen(
+    (e) => navigator.navigate(window.location.pathname, true)
+  );
 
   // Initialize routing with current url.
   navigator.navigate(window.location.pathname);
