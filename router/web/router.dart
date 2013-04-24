@@ -1,16 +1,44 @@
 import 'dart:html';
+import 'lib/router.dart';
+import 'package:web_ui/web_ui.dart';
 
-void main() {
-  query("#sample_text_id")
-    ..text = "Click me!"
-    ..onClick.listen(reverseText);
+@observable
+String activeRoute = 'Route';
+@observable
+String str = '';
+@observable
+num count = 0;
+@observable
+String sampleText = 'Click me!';
+
+var viewParams;
+
+class View {
+  final routeName;
+
+  View(this.routeName);
+
+  void load(parameters) {
+    activeRoute = routeName;
+    viewParams = parameters;
+    count = int.parse(viewParams['count']);
+  }
+  void unload() {
+
+  }
 }
 
-void reverseText(MouseEvent event) {
-  var text = query("#sample_text_id").text;
-  var buffer = new StringBuffer();
-  for (int i = text.length - 1; i >= 0; i--) {
-    buffer.write(text[i]);
-  }
-  query("#sample_text_id").text = buffer.toString();
+void main() {
+  window.history.pushState(null, '', '/second/url/4/');
+
+  var navigator = createNavigator([
+    ['first', new Route('/first/url/{count}/'), new View('first')],
+    ['second', new Route( '/second/url/{count}/'), new View('second')],
+  ]);
+
+}
+
+void increment() {
+  count++;
+  viewParams['count'] = count.toString();
 }

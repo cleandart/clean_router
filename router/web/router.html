@@ -8,12 +8,21 @@
   </head>
   <body>
     <h1>Router</h1>
-    
+    <p>Currently active route {{activeRoute}}</p>
+
+    <a href='/first/url/1/'>First url!</a>
+    <a href='/second/url/1/'>Second url!</a>
+
+    <button on-click="increment()">Click count: {{count}}</button>
+
     <p>Hello world from Dart!</p>
-    
-    <div id="sample_container_id">
-      <p id="sample_text_id"></p>
-    </div>
+
+    <template instantiate="if activeRoute == 'first'">
+      <h2>First page</h2>
+    </template>
+    <template instantiate="if activeRoute == 'second'">
+      <h2>Second page</h2>
+    </template>
 
     <script type="application/dart" src="router.dart"></script>
     <script src="packages/browser/dart.js"></script>
