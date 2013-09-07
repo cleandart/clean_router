@@ -296,7 +296,7 @@ PageNavigator createNavigator(List rules,
 
   if (navigator is HashNavigator) {
     window.onHashChange.listen(
-        (e) => navigator.navigate('/' + window.location.hash)
+        (e) => navigator.navigate(window.location.hash.substring(1))
     );
   }
   
