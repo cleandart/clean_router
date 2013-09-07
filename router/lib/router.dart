@@ -2,7 +2,7 @@
 // code is governed by a BSD-style license that can be found in the LICENSE
 // file.
 
-library mvc.router;
+library dart.router;
 import "dart:core";
 import "dart:html";
 import 'package:delegate/delegate.dart';
