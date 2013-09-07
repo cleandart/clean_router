@@ -260,32 +260,27 @@ PageNavigator createNavigator(List rules,
   } else {
     navigator = new HashNavigator(router, views, transitionHandler);
   }
-
+  
   delegateOn(document, 'click', (el) => el is AnchorElement, (ev, el) {
     // Ignore anchors without href.
     if (el.href == null) {
       return;
     }
-    //IE9 fix, window.location.host is without port    
-    var host = window.location.host;
-    if (host.indexOf(':') < 0 && el.host.indexOf(':') > 0) {
-      var port = window.location.port;
-      if (port == null || port == '') {
-        //it is default port
-        host += ':80';
-      } else {
-        host += ':$port';
+    
+    if (el.host == "") {
+      if (!el.href.contains(window.location.host)) {
+        return;
       }
+    } else if (el.host != window.location.host) {
+        return;
     }
-    // Ignore urls pointing outside of the web.
-    if (el.host != host) {
-      return;
-    }
+    
     //IE9 ignores '/' in a.href
     var pathname = el.pathname;
     if (pathname[0] != '/') {
       pathname = '/' + pathname;
     } 
+    
     navigator.navigate(pathname);
     ev.preventDefault();
   });
