@@ -2,13 +2,10 @@
 // code is governed by a BSD-style license that can be found in the LICENSE
 // file.
 
-library vacuum.router;
+library mvc.router;
 import "dart:core";
-import "dart:uri";
 import "dart:html";
-import 'package:web_ui/web_ui.dart';
 import 'package:delegate/delegate.dart';
-
 
 /**
  * Maps [Map] of variables to [String] Url component and vice versa.
@@ -62,7 +59,7 @@ class Route {
    * Matches the [url] against the [Route] pattern and returns [Map] of matched
    * parameters or [null] if the Route does not match.
    */
-  ObservableMap match(String url) {
+  Map match(String url) {
     var match = this._matchExp.firstMatch(url);
 
     // If the [url] does not match, returns [null].
@@ -71,9 +68,9 @@ class Route {
     }
 
     // Decode [url] parameters and fill them into [Map].
-    ObservableMap result = new ObservableMap();
+    Map result = new Map();
     for (var i = 0; i < this._variables.length; i++) {
-      result[this._variables[i]] = decodeUriComponent(match.group(i+1));
+      result[this._variables[i]] = Uri.decodeComponent(match.group(i+1));
     }
 
     return result;
@@ -92,7 +89,7 @@ class Route {
           throw new FormatException("Missing value for ${part['value']}.");
         }
       }
-      parts.add(encodeUriComponent(value));
+      parts.add(Uri.encodeComponent(value));
     }
     return parts.join('/');
   }
@@ -160,16 +157,13 @@ void simpleTransition(oldView, newView, parameters) {
  * view rendering.
  */
 class PageNavigator {
-  final observe;
   final History history;
   final Router router;
   final Map<String, dynamic> views;
   final transitionHandler;
   var activeRoute;
-  var activeWatchDisposer;
 
   PageNavigator(
-    this.observe,
     this.history,
     this.router,
     this.views,
@@ -184,9 +178,9 @@ class PageNavigator {
    * 1. Match the [url] against the [Router] [Route]s
    * 2. Matches the [Route] to the corresponding view
    * 3. Handles the transition from current view to the matched one
-   * 4. Pushes new [url] to the [History]
-   * 5. Starts monitoring [Route] parameters for changes and automatically
-   *    updates the [url] with [History.replaceState].
+   * 4. Pushes new [url] to the [History] if HTML5 history is supported and [withoutPush] is false
+   * 5  Replaces new [url] if [withoutPush] is true
+   * 6. If HTML5 history is not supported, url is added behind #
    */
   void navigate(url, [withoutPush = false]) {
     var match = this.router.match(url);
@@ -196,26 +190,23 @@ class PageNavigator {
       match[1]
     );
     this.activeRoute = match[0];
-    if (!withoutPush) {
-      this.history.pushState(null, '', url);
-    }
-
-    // Stop watching parameters of the previous view.
-    if (this.activeWatchDisposer != null) {
-      this.activeWatchDisposer();
-    }
-
-    // Automatically update the [url] if the parameters got changed.
-    this.activeWatchDisposer = this.observe(match[1], (e) {
-      this.history.replaceState(null, '',
-        this.router.routePath(this.activeRoute, e.newValue)
-      );
-    });
+    if (History.supportsState) {
+      if (!withoutPush)
+        this.history.pushState(null, '', url);
+      else
+        this.history.replaceState(null, '', url);
+    } else {
+      var activeUrl = window.location.href;
+      if (activeUrl.indexOf('#') > 0) {
+        window.location.href = activeUrl.substring(0, activeUrl.indexOf('#') + 1) + url;
+      } else {
+        window.location.href += '#' + url;
+      }
+    }   
   }
-
 }
 
-PageNavigator createNavigator(List rules,
+ PageNavigator createNavigator(List rules,
   [transitionHandler = simpleTransition]) {
   var routes = {};
   var views = {};
@@ -224,19 +215,39 @@ PageNavigator createNavigator(List rules,
     views[rule[0]] = rule[2];
   }
   var router = new Router(window.location.host, routes);
-  var navigator =  new PageNavigator(observe, window.history, router, views,
+  var navigator =  new PageNavigator(window.history, router, views,
     transitionHandler);
 
-  delegateOn(window, 'click', (el) => el is AnchorElement, (ev, el) {
+  delegateOn(document, 'click', (el) => el is AnchorElement, (ev, el) {
     // Ignore anchors without href.
     if (el.href == null) {
       return;
     }
+    
+    //IE9 fix, window.location.host is without port    
+    var host = window.location.host;
+    if (host.indexOf(':') < 0 && el.host.indexOf(':') > 0) {
+      var port = window.location.port;
+      if (port == null || port == '') {
+        //it is default port
+        host += ':80';
+      } else {
+        host += ':$port';
+      }
+    }
+    
     // Ignore urls pointing outside of the web.
-    if (el.host != window.location.host) {
+    if (el.host != host) {
       return;
     }
-    navigator.navigate(el.pathname);
+    
+    //IE9 ignores '/' in a.href
+    var pathname = el.pathname;
+    if (pathname[0] != '/') {
+      pathname = '/' + pathname;
+    }
+    
+    navigator.navigate(pathname);
     ev.preventDefault();
   });
 
@@ -244,8 +255,7 @@ PageNavigator createNavigator(List rules,
     (e) => navigator.navigate(window.location.pathname, true)
   );
 
-  // Initialize routing with current url.
-  navigator.navigate(window.location.pathname);
-
+  //Initialize routing with current url.
+  //navigator.navigate(window.location.pathname);
   return navigator;
 }
