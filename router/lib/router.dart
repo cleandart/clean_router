@@ -168,11 +168,14 @@ abstract class PageNavigator {
     this._transitionHandler
     );
 
-  
+  /**
+   * Navigates to the given url.
+   * Subclasses uses different approach based on HTML5 History support  
+   */
   void navigate(url, [withoutPush = false]);
   
   /**
-   * Navigates to the given [url] and renders the page.
+   * Changes view for given [url] and renders the page.
    *
    * This consits of the following steps:
    *
@@ -180,7 +183,7 @@ abstract class PageNavigator {
    * 2. Matches the [Route] to the corresponding view
    * 3. Handles the transition from current view to the matched one
    */
-  void _navigateToUrl(url, [withoutPush = false]) {
+  void _changeView(url, [withoutPush = false]) {
     var match = this._router.match(url);
     this._transitionHandler(
       this._views[_activeRoute],
@@ -204,7 +207,7 @@ class HistoryNavigator extends PageNavigator{
    * 2.  Replaces new [url] if [withoutPush] is true
    */
   void navigate(url, [withoutPush = false]){
-    _navigateToUrl(url);
+    _changeView(url);
     if (!withoutPush) {
       this._history.pushState(null, '', url);
     } else {
@@ -225,7 +228,7 @@ class HashNavigator extends PageNavigator{
    * Url is added behind #
    */
   void navigate(url, [withoutPush = false]){
-    _navigateToUrl(url);  
+    _changeView(url);  
     var activeUrl = window.location.href;
     if (activeUrl.indexOf('#') > 0) {
       window.location.href = activeUrl.substring(0, activeUrl.indexOf('#') + 1) + url;
