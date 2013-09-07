@@ -1,5 +1,5 @@
 import 'dart:html';
-import 'lib/router.dart';
+import 'package:router/router.dart';
 import 'package:web_ui/web_ui.dart';
 
 @observable
