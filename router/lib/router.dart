@@ -2,7 +2,7 @@
 // code is governed by a BSD-style license that can be found in the LICENSE
 // file.
 
-library dart.router;
+library vacuum.router;
 import "dart:core";
 import "dart:html";
 import 'package:delegate/delegate.dart';
@@ -156,20 +156,21 @@ void simpleTransition(oldView, newView, parameters) {
  * [PageNavigator] wires together [History] management, [Route] matching and
  * view rendering.
  */
-class PageNavigator {
-  final History history;
-  final Router router;
-  final Map<String, dynamic> views;
-  final transitionHandler;
-  var activeRoute;
+abstract class PageNavigator {
+  final Router _router;
+  final Map<String, dynamic> _views;
+  final _transitionHandler;
+  var _activeRoute;
 
   PageNavigator(
-    this.history,
-    this.router,
-    this.views,
-    this.transitionHandler
+    this._router,
+    this._views,
+    this._transitionHandler
     );
 
+  
+  void navigate(url, [withoutPush = false]);
+  
   /**
    * Navigates to the given [url] and renders the page.
    *
@@ -178,35 +179,69 @@ class PageNavigator {
    * 1. Match the [url] against the [Router] [Route]s
    * 2. Matches the [Route] to the corresponding view
    * 3. Handles the transition from current view to the matched one
-   * 4. Pushes new [url] to the [History] if HTML5 history is supported and [withoutPush] is false
-   * 5  Replaces new [url] if [withoutPush] is true
-   * 6. If HTML5 history is not supported, url is added behind #
    */
-  void navigate(url, [withoutPush = false]) {
-    var match = this.router.match(url);
-    this.transitionHandler(
-      this.views[activeRoute],
-      this.views[match[0]],
+  void _navigateToUrl(url, [withoutPush = false]) {
+    var match = this._router.match(url);
+    this._transitionHandler(
+      this._views[_activeRoute],
+      this._views[match[0]],
       match[1]
     );
-    this.activeRoute = match[0];
-    if (History.supportsState) {
-      if (!withoutPush)
-        this.history.pushState(null, '', url);
-      else
-        this.history.replaceState(null, '', url);
-    } else {
-      var activeUrl = window.location.href;
-      if (activeUrl.indexOf('#') > 0) {
-        window.location.href = activeUrl.substring(0, activeUrl.indexOf('#') + 1) + url;
-      } else {
-        window.location.href += '#' + url;
-      }
-    }   
+    this._activeRoute = match[0];     
   }
 }
 
- PageNavigator createNavigator(List rules,
+class HistoryNavigator extends PageNavigator{
+  
+  final History _history;
+  
+  HistoryNavigator(this._history, router, views, transitionHandler) 
+      : super(router, views, transitionHandler);
+  
+  /**
+   * Navigates with HTML5 State API
+   * 1. Pushes new [url] to the [History] if  [withoutPush] is false
+   * 2.  Replaces new [url] if [withoutPush] is true
+   */
+  void navigate(url, [withoutPush = false]){
+    _navigateToUrl(url);
+    if (!withoutPush) {
+      this._history.pushState(null, '', url);
+    } else {
+      this._history.replaceState(null, '', url);
+    }
+  }
+}
+
+
+class HashNavigator extends PageNavigator{
+  
+  HashNavigator(router, views, transitionHandler) 
+  : super(router, views, transitionHandler);
+  
+  /**
+   * Navigates with hash in url.
+   *
+   * Url is added behind #
+   */
+  void navigate(url, [withoutPush = false]){
+    _navigateToUrl(url);  
+    var activeUrl = window.location.href;
+    if (activeUrl.indexOf('#') > 0) {
+      window.location.href = activeUrl.substring(0, activeUrl.indexOf('#') + 1) + url;
+    } else {
+      window.location.href += '#' + url;
+    }
+  }
+}
+
+/**
+ * PageNavigator factory
+ * 
+ * Creates HistoryNavigator instance if browser supports HTML5 State API, 
+ * otherwise creates HashNavigator instance.
+ */
+PageNavigator createNavigator(List rules,
   [transitionHandler = simpleTransition]) {
   var routes = {};
   var views = {};
@@ -215,15 +250,19 @@ class PageNavigator {
     views[rule[0]] = rule[2];
   }
   var router = new Router(window.location.host, routes);
-  var navigator =  new PageNavigator(window.history, router, views,
-    transitionHandler);
+  var navigator = null;
+  
+  if (History.supportsState) {
+    navigator =  new HistoryNavigator(window.history, router, views, transitionHandler);
+  } else {
+    navigator = new HashNavigator(router, views, transitionHandler);
+  }
 
   delegateOn(document, 'click', (el) => el is AnchorElement, (ev, el) {
     // Ignore anchors without href.
     if (el.href == null) {
       return;
     }
-    
     //IE9 fix, window.location.host is without port    
     var host = window.location.host;
     if (host.indexOf(':') < 0 && el.host.indexOf(':') > 0) {
@@ -235,18 +274,15 @@ class PageNavigator {
         host += ':$port';
       }
     }
-    
     // Ignore urls pointing outside of the web.
     if (el.host != host) {
       return;
     }
-    
     //IE9 ignores '/' in a.href
     var pathname = el.pathname;
     if (pathname[0] != '/') {
       pathname = '/' + pathname;
-    }
-    
+    } 
     navigator.navigate(pathname);
     ev.preventDefault();
   });
@@ -255,7 +291,11 @@ class PageNavigator {
     (e) => navigator.navigate(window.location.pathname, true)
   );
 
-  //Initialize routing with current url.
-  //navigator.navigate(window.location.pathname);
+  if (navigator is HashNavigator) {
+    window.onHashChange.listen(
+        (e) => navigator.navigate('/' + window.location.hash)
+    );
+  }
+  
   return navigator;
 }

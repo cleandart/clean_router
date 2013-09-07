@@ -1,4 +1,4 @@
-import 'dart:html';
+
 import 'package:router/router.dart';
 import 'package:web_ui/web_ui.dart';
 
@@ -29,13 +29,12 @@ class View {
 }
 
 void main() {
-  window.history.pushState(null, '', '/second/url/4/');
-
-  var navigator = createNavigator([
+   var navigator = createNavigator([
     ['first', new Route('/first/url/{count}/'), new View('first')],
     ['second', new Route( '/second/url/{count}/'), new View('second')],
   ]);
 
+  navigator.navigate('/second/url/4/');
 }
 
 void increment() {
