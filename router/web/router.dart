@@ -32,7 +32,7 @@ void main() {
    var navigator = createNavigator([
     ['first', new Route('/first/url/{count}/'), new View('first')],
     ['second', new Route( '/second/url/{count}/'), new View('second')],
-  ]);
+  ], NavigatorType.DETECT_BY_BROWSER);
 
   navigator.navigate('/second/url/4/');
 }

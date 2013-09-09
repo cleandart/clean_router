@@ -183,7 +183,7 @@ abstract class PageNavigator {
    * 2. Matches the [Route] to the corresponding view
    * 3. Handles the transition from current view to the matched one
    */
-  void _changeView(url, [withoutPush = false]) {
+  void _changeView(url) {
     var match = this._router.match(url);
     this._transitionHandler(
       this._views[_activeRoute],
@@ -229,23 +229,27 @@ class HashNavigator extends PageNavigator{
    */
   void navigate(url, [withoutPush = false]){
     _changeView(url);  
-    var activeUrl = window.location.href;
-    if (activeUrl.indexOf('#') > 0) {
-      window.location.href = activeUrl.substring(0, activeUrl.indexOf('#') + 1) + url;
-    } else {
-      window.location.href += '#' + url;
-    }
+    window.location.hash = '#' + url;
   }
+}
+
+class NavigatorType {
+  final _value;
+  const NavigatorType._internal(this._value);
+  toString() => 'NavigatorType.$_value';
+
+  static const DETECT_BY_BROWSER = const NavigatorType._internal('DETECT_BY_BROWSER');
+  static const HASH_NAVIGATOR = const NavigatorType._internal('HASH_NAVIGATOR');
+  static const HISTORY_NAVIGATOR = const NavigatorType._internal('HISTORY_NAVIGATOR');
 }
 
 /**
  * PageNavigator factory
  * 
- * Creates HistoryNavigator instance if browser supports HTML5 State API, 
- * otherwise creates HashNavigator instance.
+ * Creates PageNavigator instance based on [navigatorType] and HTML5 State API browser support
  */
-PageNavigator createNavigator(List rules,
-  [transitionHandler = simpleTransition]) {
+PageNavigator createNavigator(List rules, NavigatorType navigatorType,
+    [transitionHandler = simpleTransition]) {
   var routes = {};
   var views = {};
   for (var rule in rules) {
@@ -255,10 +259,10 @@ PageNavigator createNavigator(List rules,
   var router = new Router(window.location.host, routes);
   var navigator = null;
   
-  if (History.supportsState) {
-    navigator =  new HistoryNavigator(window.history, router, views, transitionHandler);
-  } else {
+  if (!History.supportsState || navigatorType == NavigatorType.HASH_NAVIGATOR) {
     navigator = new HashNavigator(router, views, transitionHandler);
+  } else {
+    navigator =  new HistoryNavigator(window.history, router, views, transitionHandler);
   }
   
   delegateOn(document, 'click', (el) => el is AnchorElement, (ev, el) {
