@@ -1,10 +1,15 @@
 name: router
 version: 0.0.0
-author: Samuel Hapák <samuel.hapak@vacuumapps.com>
+authors:
+- Samuel Hapák <samuel.hapak@vacuumapps.com>
+- Peter Csiba <petherz@gmail.com> 
 description: A sample web application
 homepage: https://github.com/hleumas/dart-router
 dependencies:
-  unittest: any
   browser: any
-  web_ui: any
   delegate: any
+  unittest:
+  web_ui: any
+  clean_data:
+    git:
+      url: git://github.com/hleumas/clean_data.git

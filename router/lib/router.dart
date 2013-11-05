@@ -6,6 +6,7 @@ library vacuum.router;
 import "dart:core";
 import "dart:html";
 import 'package:delegate/delegate.dart';
+import 'package:clean_data/clean_data.dart'; 
 
 /**
  * Maps [Map] of variables to [String] Url component and vice versa.
