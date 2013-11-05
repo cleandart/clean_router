@@ -2,10 +2,38 @@
 // code is governed by a BSD-style license that can be found in the LICENSE
 // file.
 
+/* 
+ *   TODO Consider if neccessary: Route: map -> clean_data.Data
+ *   Timer.run()
+ *   TOVIEW: clean_data.unit_test , GWT methodology 
+ */
+
 library vacuum.router;
 import "dart:core";
 import "dart:html";
 import 'package:clean_data/clean_data.dart'; 
+
+//TODO consider moving to a separate file
+/**
+ * [View] is responsible for manipulating data received from server to be used for HTML.
+ * Methods of [View] are called when [PageNavigator] matches the corresponding route or is navigated to different location. 
+ */
+abstract class View{
+  /**
+   * Called when [PageNavigator] decides a new [View] should be used/displayed. 
+   * [View] should listen do data changes. [PageNavigator] listens to each data change of [View].  
+   * See [PageNavigator.navigate] for more. 
+   * 
+   * @param data Data parsed from url. 
+   */
+  void load(Data data);
+  
+  /**
+   * Called when [PageNavigator] decides this [View] is no more necessary/to be displayed.
+   * Here the implementation should release all unnecessary resources.  
+   */
+  void unload(); 
+}
 
 /**
  * Maps [Map] of variables to [String] Url component and vice versa.
@@ -56,8 +84,11 @@ class Route {
     this._matchExp = new RegExp(r"^" + matcherParts.join('/') + r"$");
   }
   /**
-   * Matches the [url] against the [Route] pattern and returns [Map] of matched
-   * parameters or [null] if the Route does not match.
+   * Matches the [url] against the [Route] pattern and returns [Map] of matched.
+   * Inverse function to [Route.path]. 
+   * 
+   * @param url Url to be matched.  
+   * @returns Parameters or [null] if the Route does not match.
    */
   Map match(String url) {
     var match = this._matchExp.firstMatch(url);
@@ -78,6 +109,11 @@ class Route {
 
   /**
    * Constructs the [url] using the [Route] pattern and values in [variables].
+   * Inverse function to [Route.match]. 
+   * 
+   * @param variables Variables to be substitued. 
+   * @returns Constructed url. 
+   * @throws FormatException If some variable was not provided in [variables].  
    */
   String path(Map variables) {
     var parts = [];
@@ -142,6 +178,73 @@ class Router {
 /**
  * [PageNavigator] wires together [History] management, [Route] matching and
  * view rendering.
+ * 
  */
-abstract class PageNavigator {
+class PageNavigator {
+  Router _router; 
+  dynamic _history; 
+  String _activeRouteName;
+  Data _activeParameters; 
+  
+  Map _views;
+  
+/**
+ * Create a new [PageNavigator] for client to allow him navigate through the site. 
+ * Responsibility: Manage url addresses and bind them to views. It updates url (replaceState, pushState) if the url params are changed in the view. 
+ *  
+ * @param _router For matching route names to routes and parameters. 
+ * @param _history Should have pushState and replaceState with semantics as dart.dom.history. See [HashHistory] for more. 
+ */
+  PageNavigator(this._router, this._history);
+  
+/**
+ * Navigates the browser to the selected route with given data. A [View] is selected and [Data] passed. 
+ * When [View] changes [Data] then [PageNavigator] calls history.replaceState with a new url. 
+ * From the other side when [PageNavigator.navigate] is called to an actual [View] the [Data] is updated and therefore [Vew] sould listen to [Data] changes. 
+ * 
+ * @param name Name of the route to be navigated to. 
+ * @param data Parameter values.
+ * @param pushState If the new url (state) should be pushed to browser history. 
+ */
+  void navigate(String name, Map data, [bool pushState]){
+    /* TODO 
+    *        //inlcude discussion, that data holder should listen to changes    
+    *        if same name no load and unload
+    *        data.clear
+      *        data.addAll
+        *      pushState -> pushes actual state, don't block anything so on notify callback the replaceState will be called
+        */ 
+  }  
 }
+
+//TODO not sure if panko
+/**
+ * Should have the closest approximation of [dart.dom.history] as possible for browsers not supporting [HTML5].
+ * This is implemented via tokens after hashes in url which are allowed to change by browsers. 
+ * 
+ * See http://api.dartlang.org/docs/releases/latest/dart_html/History.html#pushState .
+ */
+class HashHistory {
+  /**
+   * Navigates to url.  
+   */
+  void pushState(Object data, String title, [String url]){
+    window.location.hash = '#' + url;
+  }
+
+  /**
+   * Navigates to url. 
+   */
+  void replaceState(Object data, String title, [String url]){
+    window.location.hash = '#' + url;
+  }
+}
+
+
+
+
+
+
+
+
+
