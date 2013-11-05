@@ -2,8 +2,35 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:unittest/unittest.dart';
-import 'package:web_ui/observe.dart';
 import 'lib/router.dart';
+import 'package:unittest/mock.dart';
+import 'package:clean_data/clean_data.dart'; 
+import 'dart:async';
+
+class HistoryMock extends Mock implements HashHistory {
+  var url = null; 
+  var type = null; 
+  void pushState(Object data, String title, [String url]){
+    this.url = url;
+    this.type = "push";
+  }
+  void replaceState(Object data, String title, [String url]){
+    this.url = url; 
+    this.type = "replace";
+  }
+}
+
+class ViewMock extends Mock implements View{
+  var state = null; 
+  Data data = null; 
+  void load(Data data){
+    this.state = "load";
+    this.data = data; 
+  }
+  void unload(){
+    this.state = "unload";
+  }
+}
 
 void main() {
   test('Unsupported route format', () {
@@ -125,4 +152,107 @@ void main() {
         throwsArgumentError
     );
   });
+  
+  HistoryMock history = new HistoryMock();
+  var historyReplaceCalls = 0; 
+  ViewMock view2 = new ViewMock(); 
+  ViewMock view3 = new ViewMock();
+  Map views = {
+               "my-site" : null, 
+               "static"  : view2, 
+               "one-param" : view3
+  };
+  
+  test('PageNavigator constructed', (){
+    expect(new PageNavigator(router, history, views), isNot(null));
+  });
+  
+  PageNavigator pageNavigator = new PageNavigator(router, history, views);
+  
+  test('PageNavigator navigate to static page', () {
+    pageNavigator.navigate("static", {}); 
+    
+    String route2Path = route2.path({}); 
+    
+    expect(pageNavigator.getActivePath(), equals(route2Path));
+    
+    history.getLogs(callsTo("replaceState")).verify(happenedExactly(++historyReplaceCalls));
+    expect(history.url, equals(route2Path)); 
+    
+    view2.getLogs(callsTo("load")).verify(happenedExactly(1));
+    view2.getLogs(callsTo("unload")).verify(happenedExactly(1));
+    expect(view2.data, isNot(null));
+    expect(view2.data.isEmpty, true); 
+  });
+
+  test('PageNavigator push state', () {
+    pageNavigator.pushState();
+    history.getLogs(callsTo("pushState")).verify(happenedExactly(1));
+  });
+
+  test('PageNavigator navigate to null view', () {
+    expect(
+        () => pageNavigator.navigate("my-site", {}),
+        throwsNullThrownError
+    ); 
+  });
+
+  test('PageNavigator navigate to one param page', () {
+      Map params = {'one_parameter': 'suchy_pes'}; 
+      pageNavigator.navigate('one-param', params); 
+      
+      String route3Path = route3.path(params); 
+      
+      expect(pageNavigator.getActivePath(), equals(route3Path));
+      
+      history.getLogs(callsTo("replaceState")).verify(happenedExactly(++historyReplaceCalls));
+      expect(history.url, equals(route3Path)); 
+
+      view2.getLogs(callsTo("load")).verify(happenedExactly(1));
+      view2.getLogs(callsTo("unload")).verify(happenedExactly(1));
+      
+      view3.getLogs(callsTo("load")).verify(happenedExactly(1));
+      view3.getLogs(callsTo("load")).verify(happenedExactly(0));
+      expect(view3.data, isNot(null));
+      expect(view3.data.keys.first, equals(params.keys.first));
+      expect(view3.data.values.first, equals(params.values.first)); 
+  });
+  
+  test('PageNavigator update url when Data updated', () {
+    Map newParams = {'one_parameter': 'bozi_pan'}; 
+    String route3Path = route3.path(newParams); 
+    
+    view3.data[newParams.keys.first] = newParams.values.first;
+    
+    //TODO how to do it? 
+    //asynchronous check
+    Timer.run(() { 
+      expect(pageNavigator.getActivePath(), equals(route3Path));
+      history.getLogs(callsTo("replaceState")).verify(happenedExactly(++historyReplaceCalls));
+      expect(history.url, equals(route3Path)); 
+    });
+  });
+
+  test('PageNavigator navigate to same view with different params', () {
+    Map newParams = {'one_parameter': 'mega_motac'}; 
+    String route3Path = route3.path(newParams); 
+    
+    pageNavigator.navigate('one-param', newParams); 
+    expect(pageNavigator.getActivePath(), equals(route3Path));
+    
+    expect(view3.data, isNot(null));
+    expect(view3.data.keys.first, equals(newParams.keys.first));
+    expect(view3.data.values.first, equals(newParams.values.first)); 
+    
+    history.getLogs(callsTo("replaceState")).verify(happenedExactly(++historyReplaceCalls));
+    expect(history.url, equals(route3Path)); 
+    
+    view3.getLogs(callsTo("load")).verify(happenedExactly(1));
+    view3.getLogs(callsTo("unload")).verify(happenedExactly(0));
+  });
 }
+
+
+
+
+

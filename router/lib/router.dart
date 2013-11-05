@@ -23,8 +23,6 @@ abstract class View{
    * Called when [PageNavigator] decides a new [View] should be used/displayed. 
    * [View] should listen do data changes. [PageNavigator] listens to each data change of [View].  
    * See [PageNavigator.navigate] for more. 
-   * 
-   * @param data Data parsed from url. 
    */
   void load(Data data);
   
@@ -86,9 +84,6 @@ class Route {
   /**
    * Matches the [url] against the [Route] pattern and returns [Map] of matched.
    * Inverse function to [Route.path]. 
-   * 
-   * @param url Url to be matched.  
-   * @returns Parameters or [null] if the Route does not match.
    */
   Map match(String url) {
     var match = this._matchExp.firstMatch(url);
@@ -109,13 +104,11 @@ class Route {
 
   /**
    * Constructs the [url] using the [Route] pattern and values in [variables].
-   * Inverse function to [Route.match]. 
-   * 
-   * @param variables Variables to be substitued. 
-   * @returns Constructed url. 
-   * @throws FormatException If some variable was not provided in [variables].  
+   * Inverse function to [Route.match]. Returns constructed url.
+   * Accepts [Map] and [Data] as parameters.  
+   * Throws [FormatException] if some variable was not provided in [variables].  
    */
-  String path(Map variables) {
+  String path(dynamic variables) {
     var parts = [];
     for (var part in this._urlParts) {
       var value = part['value'];
@@ -143,9 +136,9 @@ class Router {
 
   /**
    * Returns path part of the url corresponding to the given [routeName] and
-   * [parameters].
+   * [parameters]. Accepts [Map] and [Data] as [parameters]. 
    */
-  String routePath(String routeName, Map parameters) {
+  String routePath(String routeName, dynamic parameters) {
     var route = this.routes[routeName];
     if (route == null) {
       throw new ArgumentError('Router does not contain a route "$routeName".');
@@ -155,9 +148,9 @@ class Router {
 
   /**
    * Returns the whole url corresponding to the given [routeName] and
-   * [parameters].
+   * [parameters]. Accepts [Map] and [Data] as [parameters]. 
    */
-  String routeUrl(String routeName, Map parameters) {
+  String routeUrl(String routeName, dynamic parameters) {
     return this.host + this.routePath(routeName, parameters);
   }
 
@@ -175,9 +168,10 @@ class Router {
   }
 }
 
+//TODO consider how to treat duplicity of name->view (_views) and name->route (_router) 
 /**
  * [PageNavigator] wires together [History] management, [Route] matching and
- * view rendering.
+ * [View] rendering.
  * 
  */
 class PageNavigator {
@@ -185,36 +179,60 @@ class PageNavigator {
   dynamic _history; 
   String _activeRouteName;
   Data _activeParameters; 
-  
   Map _views;
+  
+  String getActivePath() => this._router.routePath(this._activeRouteName, this._activeParameters); 
   
 /**
  * Create a new [PageNavigator] for client to allow him navigate through the site. 
  * Responsibility: Manage url addresses and bind them to views. It updates url (replaceState, pushState) if the url params are changed in the view. 
- *  
- * @param _router For matching route names to routes and parameters. 
- * @param _history Should have pushState and replaceState with semantics as dart.dom.history. See [HashHistory] for more. 
+ * Parameter [_router] for matching route names to routes and parameters. 
+ * Parameter [_history] should have pushState and replaceState with semantics as dart.dom.history. See [HashHistory] for more. 
+ * Parameter [_views] is map of ROUTE_NAME : View to render. 
+ * Throws [ArgumentError] when at least one of the arguments is null. 
  */
-  PageNavigator(this._router, this._history);
+  PageNavigator(this._router, this._history, this._views){
+    if(this._router == null){
+      throw new ArgumentError("Cannot construct PageNavigator as router is null."); 
+    }
+    if(this._history == null){
+      throw new ArgumentError("Cannot construct PageNavigator as history is null."); 
+    }
+    if(this._views == null){
+      throw new ArgumentError("Cannot construct PageNavigator as views is null."); 
+    }
+  }
   
 /**
- * Navigates the browser to the selected route with given data. A [View] is selected and [Data] passed. 
+ * Navigates the browser to the selected route with given [data]. A [View] is selected and [Data] passed. 
  * When [View] changes [Data] then [PageNavigator] calls history.replaceState with a new url. 
- * From the other side when [PageNavigator.navigate] is called to an actual [View] the [Data] is updated and therefore [Vew] sould listen to [Data] changes. 
- * 
- * @param name Name of the route to be navigated to. 
- * @param data Parameter values.
- * @param pushState If the new url (state) should be pushed to browser history. 
+ * From the other side when [PageNavigator.navigate] is called to an actual [View] the [Data] is updated and therefore [Vew] sould listen to [Data] changes.
+ * Parameter [name] of the route to be navigated to. 
+ * Parameter [data] route parameter values.
+ * Flag [pushState] if the new url (state) should be pushed to browser history.
+ * Throws [StateError] when trying to navigate to a null [View].
+ * Throws [ArgumentError] when no such route exists.  
  */
   void navigate(String name, Map data, [bool pushState]){
+    if(this._views[name] == null){
+      throw new StateError("View not found for '$name'"); 
+    }
     /* TODO 
-    *        //inlcude discussion, that data holder should listen to changes    
+    *        //include discussion, that data holder should listen to changes    
     *        if same name no load and unload
     *        data.clear
       *        data.addAll
         *      pushState -> pushes actual state, don't block anything so on notify callback the replaceState will be called
         */ 
   }  
+  
+/**
+ * Pushes the current state. Should be called from [View] when [View] considers it necessary after block of [Data] changes.
+ * Note that [Data].onChange callback is called in PageNavigator it will only call [_history.replaceState] which will do no harm. 
+ */
+  void pushState(){
+    this._history.pushState(new Object(), "", this.getActivePath()); 
+  }
 }
 
 //TODO not sure if panko
@@ -239,9 +257,6 @@ class HashHistory {
     window.location.hash = '#' + url;
   }
 }
-
-
-
 
 
 
