@@ -2,14 +2,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:unittest/unittest.dart';
-import 'package:unittest/mock.dart';
-import 'package:web_ui/watcher.dart' as watchers;
 import 'package:web_ui/observe.dart';
 import 'lib/router.dart';
-import 'dart:html';
-
-class HistoryMock extends Mock implements History {}
-class RouterMock extends Mock implements Router {}
 
 void main() {
   test('Unsupported route format', () {
@@ -47,10 +41,10 @@ void main() {
     );
   });
 
-  test('Map returned from route matching is ObservableMap', () {
+  test('Map returned from route matching is Map', () {
     expect(
       route1.match('/my-site/432/123/your-site/'),
-      new isInstanceOf<ObservableMap>()
+      new isInstanceOf<Map>()
     );
   });
   test('Basic route generation', () {
@@ -131,86 +125,4 @@ void main() {
         throwsArgumentError
     );
   });
-
-  test('Simple transition unloads old and loads new view.', () {
-    var oldView = new Mock();
-    var newView = new Mock();
-    var parameters = {'var1': 'value1', 'var2': 'value2'};
-
-    simpleTransition(oldView, newView, parameters);
-
-    oldView.getLogs(callsTo('unload')).verify(happenedOnce);
-    newView.getLogs(callsTo('load', parameters)).verify(happenedOnce);
-  });
-
-  test('Simple transition does not call unload on null view.', () {
-    var newView = new Mock();
-    var parameters = {'var1': 'value1', 'var2': 'value2'};
-
-    simpleTransition(null, newView, parameters);
-
-    newView.getLogs(callsTo('load', parameters)).verify(happenedOnce);
-  });
-
-  test('PageNavigator can navigate to url and call transitionHandler', () {
-    var data = [
-      {
-        'url': '/sample/url/',
-        'newurl': '/sample/new/url/',
-        'route': 'route1',
-        'params': {'var1': 'value1'},
-        'view': new Mock(),
-      },
-      {
-        'url': '/other/url/',
-        'newurl': '/other/new/url',
-        'route': 'route2',
-        'params': {'var2': 'value2'},
-        'view': new Mock(),
-      },
-    ];
-    var disposedWatches = [];
-    var registeredWatch = [];
-    var watch = (target, callback) {
-      registeredWatch = [target, callback];
-      return () => disposedWatches.add(target);
-    };
-    var history = new HistoryMock();
-    var router = new RouterMock();
-    var views = {};
-    var transitions;
-    var transitionHandler = (oldView, newView, parameters)
-        => transitions = [oldView, newView, parameters];
-
-    for (var sample in data) {
-      router.when(callsTo('match', sample['url']))
-            .alwaysReturn([sample['route'], sample['params']]);
-      router.when(callsTo('routePath', sample['route']))
-            .alwaysReturn(sample['newurl']);
-      views[sample['route']] = sample['view'];
-    }
-
-    var navigator = new PageNavigator(
-        watch, history, router, views, transitionHandler);
-
-    navigator.navigate(data[0]['url']);
-    expect(transitions, equals([null, data[0]['view'], data[0]['params']]));
-    navigator.navigate(data[1]['url']);
-    expect(transitions,
-        equals([data[0]['view'], data[1]['view'], data[1]['params']])
-    );
-
-    history.getLogs(callsTo('pushState')).verify(happenedExactly(2));
-
-    registeredWatch[1](
-      new ChangeNotification({'var2': 'value2'}, {'var2': 'value3'})
-    );
-
-    history.getLogs(callsTo('replaceState')).verify(happenedOnce);
-
-    expect(disposedWatches[0], equals(data[0]['params']));
-
-  });
-
-
 }
