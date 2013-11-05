@@ -41,10 +41,10 @@ void main() {
     );
   });
 
-  test('Map returned from route matching is ObservableMap', () {
+  test('Map returned from route matching is Map', () {
     expect(
       route1.match('/my-site/432/123/your-site/'),
-      new isInstanceOf<ObservableMap>()
+      new isInstanceOf<Map>()
     );
   });
   test('Basic route generation', () {
