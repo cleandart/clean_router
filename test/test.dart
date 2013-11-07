@@ -1,9 +1,9 @@
-// Copyright (c) 2013, Samuel Hapak. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-//TODO test behaviour of view?
+// Copyright (c) 2013, Samuel Hapak, Peter Csiba. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
+//TODO consider spliting into test file by classes tested
 
 import 'package:unittest/unittest.dart';
-import 'lib/router.dart';
+import '../lib/router.dart';
 import 'package:unittest/mock.dart';
 import 'package:clean_data/clean_data.dart';
 import 'dart:async';
@@ -179,8 +179,8 @@ void main() {
                "one-param" : view3
   };
 
-
-  PageNavigator pageNavigator = new PageNavigator(router, history, views);
+  PageNavigator pageNavigator = new PageNavigator(router, history);
+  views.forEach((k,v) => pageNavigator.registerView(k, v));
 
   test('PageNavigator navigate to static page', () {
     // TODO GWT everywehre
