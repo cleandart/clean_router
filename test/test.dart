@@ -18,7 +18,7 @@ class HistoryMock extends Mock implements HashHistory {
   }
 }
 
-//
+// History class for async testing
 class HistoryAsyncMock extends Mock implements HashHistory {
   String expected_title;
   String expected_url;
@@ -35,7 +35,7 @@ class HistoryAsyncMock extends Mock implements HashHistory {
   }
 }
 
-class ViewMock extends Mock implements View{
+class ViewMock extends Mock implements View {
   var state = null;
   Data data = null;
   void load(Data data){
@@ -48,220 +48,343 @@ class ViewMock extends Mock implements View{
 }
 
 void main() {
-  //TODO group('')
-  test('Unsupported route format', () {
-    expect(
-      () => new Route("not-starting-with-backslash"),
-      throwsFormatException
-    );
-    expect(
-      () => new Route("/#some-chars-not-allowed"),
-      throwsFormatException
-    );
-    expect(
-      () => new Route("/some-chars/{not-allowed}/in/variable/"),
-      throwsFormatException
-    );
-    expect(
-      () => new Route("/variable-must-begin-with/{_alpha}/"),
-      throwsFormatException
-    );
-  });
+  group('Route', () {
+    //given
+    final routeStatic = new Route("/just/static/one");
+    final routeOneParameter = new Route("/route/{one_parameter}/");
+    final routeTwoVariables = new Route("/my-site/{var1}/{var2}/your-site/");
 
-  var route1 = new Route("/my-site/{var1}/{var2}/your-site/");
-  var route2 = new Route("/just/static/one");
-  var route3 = new Route("/route/{one_parameter}/");
-
-  test('Basic route matching', () {
-    expect(route1.match("/my-site/"), isNull);
-    expect(
-      route1.match("/my-site/432/123/your-site/"),
-      equals({'var1': '432', 'var2': '123'})
-    );
-    expect(
-      route1.match("/my_site/123/321/your-site/"),
-      isNull
-    );
-  });
-
-  test('Map returned from route matching is Map', () {
-    expect(
-      route1.match('/my-site/432/123/your-site/'),
-      new isInstanceOf<Map>()
-    );
-  });
-  test('Basic route generation', () {
-    expect(
-        route1.path({'var1': 'Hodnota', 'var2': 'Zloba'}),
-        equals('/my-site/Hodnota/Zloba/your-site/')
-    );
-    expect(
-        () => route1.path({'var1': 'Value'}),
+    //when & test
+    test('Unsupported route format', () {
+      expect(
+        () => new Route("not-starting-with-backslash"),
         throwsFormatException
-    );
+      );
+      //TODO what should be the behaviour?
+      /*
+      expect(
+        () => new Route("/not-ending-with-backslash"),
+        throwsFormatException
+      );*/
+      expect(
+        () => new Route("/#some-chars-not-allowed"),
+        throwsFormatException
+      );
+      expect(
+        () => new Route("/some-chars/{not-allowed}/in/variable/"),
+        throwsFormatException
+      );
+      expect(
+        () => new Route("/variable-must-begin-with/{_alpha}/"),
+        throwsFormatException
+      );
+    });
+
+    test('Basic route matching', () {
+      expect(
+          routeTwoVariables.match("/my-site/"),
+          isNull
+      );
+      expect(
+        routeTwoVariables.match("/my-site/432/123/your-site/"),
+        equals({'var1': '432', 'var2': '123'})
+      );
+      expect(
+        routeTwoVariables.match("/my_site/123/321/your-site/"),
+        isNull
+      );
+    });
+
+    test('Map returned from route matching is Map', () {
+      expect(
+        routeTwoVariables.match('/my-site/432/123/your-site/'),
+        new isInstanceOf<Map>()
+      );
+    });
+
+    test('Basic route generation', () {
+      expect(
+          routeTwoVariables.path({'var1': 'Hodnota', 'var2': 'Zloba'}),
+          equals('/my-site/Hodnota/Zloba/your-site/')
+      );
+      expect(
+          () => routeTwoVariables.path({'var1': 'Value'}),
+          throwsFormatException
+      );
+    });
+
+    test('Url escape variable values', () {
+      var params1 = {'var1': 'hello/dolly', 'var2': 'Ok'};
+      var params2 = {'var1': 'hello darling', 'var2': 'Here/we/are'};
+
+      expect(
+        routeTwoVariables.match(routeTwoVariables.path(params1)),
+        equals(params1)
+      );
+      expect(
+        routeTwoVariables.match(routeTwoVariables.path(params2)),
+        equals(params2)
+      );
+    });
   });
 
-  test('Url escape', () {
-    var params1 = {'var1': 'hello/dolly', 'var2': 'Ok'};
-    var params2 = {'var1': 'hello darling', 'var2': 'Here/we/are'};
-    expect(
-      route1.match(route1.path(params1)),
-      equals(params1)
-    );
-    expect(
-      route1.match(route1.path(params2)),
-      equals(params2)
-    );
-  });
+  group('Router', () {
+    //given
+    final pathStatic = "/just/static/one";
+    final patternOneParameter = "/route/{one_parameter}/";
+    final patternTwoVariables = "/my-site/{var1}/{var2}/your-site/";
 
-  var router = new Router('http://www.google.com', {
-    'my-site': route1,
-    'static': route2,
-    'one-param': route3,
-  });
+    final routeStatic = new Route(pathStatic);
+    final routeOneParameter = new Route(patternOneParameter);
+    final routeTwoVariables = new Route(patternTwoVariables);
 
-  test('Router route', () {
-    expect(
-      router.routePath('static', {}),
-      equals('/just/static/one')
-    );
-    expect(
-      router.routeUrl('static', {}),
-      equals('http://www.google.com/just/static/one')
-    );
-    expect(
-      router.routePath('my-site', {'var1': 'value1', 'var2': 'value2'}),
-      equals('/my-site/value1/value2/your-site/')
-    );
-    expect(
-      router.routeUrl('my-site', {'var1': 'value1', 'var2': 'value2'}),
-      equals('http://www.google.com/my-site/value1/value2/your-site/')
-    );
-    expect(
-      router.routePath('one-param', {'one_parameter': 'some_value'}),
-      equals('/route/some_value/')
-    );
-    expect(
-      router.routeUrl('one-param', {'one_parameter': 'some_value'}),
-      equals('http://www.google.com/route/some_value/')
-    );
+    final routeNameStatic = "static";
+    final routeNameOneParameter = "one_parameter";
+    final routeNameTwoVariables = "two_variables";
 
-  });
+    final hostName = 'http://www.google.com';
 
-  test('Router route with undefined route throws Error', () {
-    expect(
-      () => router.routePath('invalid-route', {}),
-      throwsArgumentError
-    );
+    var router = new Router(hostName, {
+      routeNameStatic: routeStatic,
+      routeNameOneParameter: routeOneParameter,
+      routeNameTwoVariables: routeTwoVariables
+    });
 
-  });
+    //when & test
+    test('Router route to path', () {
+      expect(
+        router.routePath(routeNameStatic, {}),
+        equals(pathStatic)
+      );
+      expect(
+        router.routePath(routeNameTwoVariables, {'var1': 'value1', 'var2': 'value2'}),
+        equals('/my-site/value1/value2/your-site/')
+      );
+      expect(
+        router.routePath(routeNameOneParameter, {'one_parameter': 'some_value'}),
+        equals('/route/some_value/')
+      );
+    });
 
-  test('Route matching', () {
-    var match = router.match('/my-site/value1/value2/your-site/');
-    expect(match[0], equals('my-site'));
-    expect(match[1], equals({'var1': 'value1', 'var2': 'value2'}));
-  });
+    test('Router route to url', () {
+      expect(
+        router.routeUrl(routeNameStatic, {}),
+        equals(hostName + pathStatic)
+      );
+      expect(
+        router.routeUrl(routeNameTwoVariables, {'var1': 'value1', 'var2': 'value2'}),
+        equals(hostName + '/my-site/value1/value2/your-site/')
+      );
+      expect(
+        router.routeUrl(routeNameOneParameter, {'one_parameter': 'some_value'}),
+        equals(hostName + '/route/some_value/')
+      );
+    });
 
-  test('Route matching undefined route throws Error', () {
-    expect(
-        () => router.match('/invalid-route'),
+    test('Router route with undefined route throws Error', () {
+      expect(
+        () => router.routePath('invalid-route', {}),
         throwsArgumentError
-    );
+      );
+    });
+
+    test('Route matching', () {
+      var matchStatic = router.match(pathStatic);
+      var matchOneParameter = router.match('/route/some_value/');
+      var matchTwoVariables = router.match('/my-site/value1/value2/your-site/');
+
+      expect(
+          matchStatic[0],
+          equals(routeNameStatic)
+      );
+      expect(
+          matchStatic[1],
+          equals({})
+      );
+
+      expect(
+          matchOneParameter[0],
+          equals(routeNameOneParameter)
+      );
+      expect(
+          matchOneParameter[1],
+          equals({'one_parameter': 'some_value'})
+      );
+
+      expect(
+          matchTwoVariables[0],
+          equals(routeNameTwoVariables)
+      );
+      expect(
+          matchTwoVariables[1],
+          equals({'var1': 'value1', 'var2': 'value2'})
+      );
+    });
+
+    test('Route matching undefined route throws Error', () {
+      expect(
+          () => router.match('/invalid-route'),
+          throwsArgumentError
+      );
+    });
   });
 
-  HistoryMock history = new HistoryMock();
-  var historyReplaceCalls = 0;
-  ViewMock view2 = new ViewMock();
-  ViewMock view3 = new ViewMock();
-  Map views = {
-               "my-site" : null,
-               "static"  : view2,
-               "one-param" : view3
-  };
+/**
+ * Page navigator is tested as simulating simple client actions chronologically.
+ */
+  group('PageNavigator', () {
 
-  PageNavigator pageNavigator = new PageNavigator(router, history);
-  views.forEach((k,v) => pageNavigator.registerView(k, v));
+    final pathStatic = "/just/static/one";
+    final patternOneParameter = "/route/{one_parameter}/";
 
-  test('PageNavigator navigate to static page', () {
-    // TODO GWT everywehre
-    // given
-    var data = {};
-    var staticRoutePath = route2.path(data);
+    final routeStatic = new Route(pathStatic);
+    final routeOneParameter = new Route(patternOneParameter);
 
-    // when
-    pageNavigator.navigate("static", data);
+    final routeNameStatic = "static";
+    final routeNameOneParameter = "one_parameter";
 
-    // then
-    expect(pageNavigator.activePath, equals(staticRoutePath));
+    final hostName = 'http://www.google.com';
 
-    history.getLogs(callsTo("replaceState")).verify(happenedExactly(++historyReplaceCalls));
-    expect(history.url, equals(staticRoutePath));
+    var router = new Router(hostName, {
+      routeNameStatic: routeStatic,
+      routeNameOneParameter: routeOneParameter
+    });
 
-    view2.getLogs(callsTo("load")).verify(happenedOnce);
-    expect(view2.getLogs(callsTo('load')).first.args.first.toJson(), equals(data));
+    var history = new HistoryMock();
+    var historyReplaceCalls = 0;
+    var historyPushCalls = 0;
 
-    view2.getLogs(callsTo("unload")).verify(happenedExactly(0));
-  });
+    ViewMock viewStatic = new ViewMock();
+    ViewMock viewOneParameter = new ViewMock();
 
-  test('PageNavigator push state', () {
-    pageNavigator.pushState();
-    history.getLogs(callsTo("pushState")).verify(happenedExactly(1));
-  });
+    PageNavigator pageNavigator = new PageNavigator(router, history);
+    pageNavigator.registerView(routeNameStatic, viewStatic);
+    pageNavigator.registerView(routeNameOneParameter, viewOneParameter);
 
-  test('PageNavigator navigate to null view', () {
-    expect(
-        () => pageNavigator.navigate("my-site", {}),
-        throwsNullThrownError
-    );
-  });
+    //when & test
+    test('PageNavigator should be initialized with no active route', () {
+      expect(
+        () => pageNavigator.activePath,
+        throwsArgumentError
+      );
+    });
 
-  test('PageNavigator navigate to one param page', () {
-      Map params = {'one_parameter': 'suchy_pes'};
-      pageNavigator.navigate('one-param', params);
+    //first transition from null to static page
+    test('PageNavigator navigate to static page', () {
+      // given initialized navigator at null state
+      var params = {};
 
-      String route3Path = route3.path(params);
+      // when
+      pageNavigator.navigate(routeNameStatic, params);
 
-      expect(pageNavigator.activePath, equals(route3Path));
+      // then ========
+      expect(pageNavigator.activePath, equals(pathStatic));
 
+      // page navigator state
       history.getLogs(callsTo("replaceState")).verify(happenedExactly(++historyReplaceCalls));
-      expect(history.url, equals(route3Path));
 
-      view2.getLogs(callsTo("load")).verify(happenedExactly(1));
-      view2.getLogs(callsTo("unload")).verify(happenedExactly(1));
+      // histoty state
+      expect(history.url, equals(pathStatic));
 
-      view3.getLogs(callsTo("load")).verify(happenedExactly(1));
-      view3.getLogs(callsTo("load")).verify(happenedExactly(0));
+      // view methods called correctly
+      viewStatic.getLogs(callsTo("load")).verify(happenedOnce);
+      expect(viewStatic.getLogs(callsTo('load')).first.args.first.toJson(), equals(params));
 
-      //TODO test if load was called with good arguments
-  });
+      viewStatic.getLogs(callsTo("unload")).verify(happenedExactly(0));
+    });
 
-  test('PageNavigator update url when Data updated', () {
-    Map newParams = {'one_parameter': 'bozi_pan'};
-    String route3Path = route3.path(newParams);
+    test('PageNavigator push state', () {
+      //given active page is static page (one transition)
 
-    view3.data[newParams.keys.first] = newParams.values.first;
+      //when
+      pageNavigator.pushState();
 
-    var hasync = new HistoryAsyncMock(null, route3Path);
+      //then
+      history.getLogs(callsTo("replaceState")).verify(happenedExactly(historyReplaceCalls));
+      history.getLogs(callsTo("pushState")).verify(++historyPushCalls);
+    });
 
-    new Timer(new Duration(milliseconds: 100), expectAsync0(hasync.replaceState));
-  });
+    test('PageNavigator navigate to non existing site', () {
+      expect(
+          () => pageNavigator.navigate("non-existing-site", {}),
+          throwsStateError
+      );
+    });
 
-  test('PageNavigator navigate to same view with different params', () {
-    Map newParams = {'one_parameter': 'mega_motac'};
-    String route3Path = route3.path(newParams);
+    test('PageNavigator navigate to one param page', () {
+      //given active page is static page (one transition)
+      var params = {'one_parameter': 'suchy_pes'};
+      var pathOneParameter = routeOneParameter.path(params);
 
-    pageNavigator.navigate('one-param', newParams);
-    expect(pageNavigator.activePath, equals(route3Path));
+      //when
+      pageNavigator.navigate(routeNameOneParameter, params);
 
-    expect(view3.data, isNot(null));
-    expect(view3.data.keys.first, equals(newParams.keys.first));
-    expect(view3.data.values.first, equals(newParams.values.first));
+      //then =========
+      //  PageNavigator state
+      expect(pageNavigator.activePath, equals(pathOneParameter));
 
-    history.getLogs(callsTo("replaceState")).verify(happenedExactly(++historyReplaceCalls));
-    expect(history.url, equals(route3Path));
+      // history state
+      history.getLogs(callsTo("replaceState")).verify(happenedExactly(++historyReplaceCalls));
+      history.getLogs(callsTo("pushState")).verify(happenedExactly(historyPushCalls));
+      expect(history.url, equals(pathOneParameter));
 
-    view3.getLogs(callsTo("load")).verify(happenedExactly(1));
-    view3.getLogs(callsTo("unload")).verify(happenedExactly(0));
+      //view methods called correctly
+      viewOneParameter.getLogs(callsTo("load")).verify(happenedOnce);
+      expect(viewOneParameter.getLogs(callsTo('load')).first.args.first.toJson(), equals(params));
+
+      viewOneParameter.getLogs(callsTo("unload")).verify(happenedExactly(0));
+    });
+
+    test('PageNavigator update url when Data updated', () {
+      //==given active page is one parameter page (two transitions)
+      //Note: forget global navigator, history and views
+      var paramsOld = {'one_parameter': 'bozi_pan'};
+      var paramsNew = {'one_parameter': 'mega_motac'};
+      var pathOld = routeOneParameter.path(paramsOld);
+      var pathNew = routeOneParameter.path(paramsNew);
+
+      var view = new ViewMock();
+      var historyAsync = new HistoryAsyncMock(null, pathNew);
+      var navigator = new PageNavigator(router, historyAsync);
+
+      navigator.registerView(routeNameOneParameter, view);
+      navigator.navigate(routeNameOneParameter, paramsOld);
+
+      //check if set up is correct
+      expect(navigator.activePath, equals(pathOld));
+      expect(view.getLogs(callsTo('load')).first.args.first.toJson(), equals(paramsOld));
+
+      //==when
+      view.data[paramsNew.keys.first] = paramsNew.values.first;
+
+      //==then
+      //check if history is updated correctly
+      new Timer(new Duration(milliseconds: 100), expectAsync0(historyAsync.replaceState));
+    });
+
+    test('PageNavigator navigate to same view with different params', () {
+      //given
+      Map paramsNew = {'one_parameter': 'trosku_pan'};
+      var pathNew = routeOneParameter.path(paramsNew);
+
+      //when
+      pageNavigator.navigate(routeNameOneParameter, paramsNew);
+
+      //then (should propagate the change in data to view)
+      expect(pageNavigator.activePath, equals(pathNew));
+
+      //view data state
+      expect(viewOneParameter.data, isNot(null));
+      expect(viewOneParameter.data.keys.first, equals(paramsNew.keys.first));
+      expect(viewOneParameter.data.values.first, equals(paramsNew.values.first));
+      //no more load/unload for view
+      viewOneParameter.getLogs(callsTo("load")).verify(happenedExactly(1));
+      viewOneParameter.getLogs(callsTo("unload")).verify(happenedExactly(0));
+
+      //history state
+      expect(history.url, equals(pathNew));
+      history.getLogs(callsTo("replaceState")).verify(happenedExactly(++historyReplaceCalls));
+    });
   });
 }
 
