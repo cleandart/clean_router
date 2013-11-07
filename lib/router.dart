@@ -1,6 +1,7 @@
 // Copyright (c) 2013, Samuel Hapak, Peter Csiba. All rights reserved. Use of this source
 // code is governed by a BSD-style license that can be found in the LICENSE
 // file.
+//TODO nice commentary
 
 library vacuum.router;
 import "dart:core";
@@ -17,7 +18,8 @@ import 'package:clean_data/clean_data.dart';
 abstract class View{
   /**
    * Called when [PageNavigator] decides a new [View] should be used/displayed.
-   * [View] should listen do data changes. [PageNavigator] listens to each data change of [View].
+   * [View] should listen do [data] changes.
+   * From the other side [PageNavigator] listens to each [data] change of [View].
    * See [PageNavigator.navigate] for more.
    */
   void load(Data data);
@@ -52,16 +54,16 @@ class Route {
       throw new FormatException("Url pattern has to begin with '/' character.");
     }
 
-    final RegExp exp = new RegExp(r"^(?:([\w-]*)|{([a-zA-Z][\w]*)})$");
+    RegExp exp = new RegExp(r"^(?:([\w-]*)|{([a-zA-Z][\w]*)})$");
     var matcherParts = new List();
     var parts = pattern.split('/');
     for (var part in parts) {
       var match = exp.firstMatch(part);
       if (match == null) {
         throw new FormatException(
-            "Only alphanumeric characters, dash '-' and underscore '_'"
-            " are allowed in the URL."
-            );
+            """Only alphanumeric characters, dash '-' and underscore '_'
+             are allowed in the URL."""
+        );
       }
       if (match.group(1) != null) {
         var group = match.group(1);
@@ -70,19 +72,19 @@ class Route {
       } else {
         var group = match.group(2);
         matcherParts.add("([^/]*)");
-        this._variables.add(group);
-        this._urlParts.add({'value': group, 'isVariable': true});
+        _variables.add(group);
+        _urlParts.add({'value': group, 'isVariable': true});
       }
     }
 
-    this._matchExp = new RegExp(r"^" + matcherParts.join('/') + r"$");
+    _matchExp = new RegExp(r"^" + matcherParts.join('/') + r"$");
   }
   /**
    * Matches the [url] against the [Route] pattern and returns [Map] of matched.
-   * Inverse function to [Route.path].
+   * This is the inverse function to [Route.path].
    */
   Map match(String url) {
-    var match = this._matchExp.firstMatch(url);
+    var match = _matchExp.firstMatch(url);
 
     // If the [url] does not match, returns [null].
     if (match == null) {
@@ -91,8 +93,8 @@ class Route {
 
     // Decode [url] parameters and fill them into [Map].
     Map result = new Map();
-    for (var i = 0; i < this._variables.length; i++) {
-      result[this._variables[i]] = Uri.decodeComponent(match.group(i+1));
+    for (var i = 0; i < _variables.length; i++) {
+      result[_variables[i]] = Uri.decodeComponent(match.group(i+1));
     }
 
     return result;
@@ -100,9 +102,9 @@ class Route {
 
   /**
    * Constructs the [url] using the [Route] pattern and values in [variables].
-   * Inverse function to [Route.match]. Returns constructed url.
-   * Accepts [Map] and [Data] as parameters.
-   * Throws [FormatException] if some variable was not provided in [variables].
+   * This is theiInverse function to [Route.match].
+   * Accepts both [Map] and [Data] as parameters.
+   * All [variables] of [Route] must be provided.
    */
   String path(dynamic variables) {
     var parts = [];
@@ -144,7 +146,7 @@ class Router {
 
   /**
    * Returns the whole url corresponding to the given [routeName] and
-   * [parameters]. Accepts [Map] and [Data] as [parameters].
+   * [parameters]. Accepts both [Map] and [Data] as [parameters].
    */
   String routeUrl(String routeName, dynamic parameters) {
     return this.host + this.routePath(routeName, parameters);
@@ -166,8 +168,8 @@ class Router {
 
 /**
  * [PageNavigator] wires together [History] management, [Route] matching and
- * [View] rendering.
- *
+ * [View] rendering. It manages url addresses and bind them to views.
+ * It updates url (replaceState, pushState) if the url params are changed in the view.
  */
 class PageNavigator {
   Router _router;
@@ -179,12 +181,7 @@ class PageNavigator {
   String get activePath => this._router.routePath(this._activeRouteName, this._activeParameters);
 
 /**
- * Create a new [PageNavigator] for client to allow him navigate through the site.
- * Responsibility: Manage url addresses and bind them to views. It updates url (replaceState, pushState) if the url params are changed in the view.
- * Parameter [_router] for matching route names to routes and parameters.
- * Parameter [_history] should have pushState and replaceState with semantics as dart.dom.history. See [HashHistory] for more.
- * Parameter [_views] is map of ROUTE_NAME : View to render.
- * Throws [ArgumentError] when at least one of the arguments is null.
+ * Creates new [PageNavigator].
  */
   PageNavigator(this._router, this._history){
     if(this._router == null){
@@ -196,11 +193,10 @@ class PageNavigator {
   }
 
 /**
- * Registeres a [View] for a particular [Route].
- * Throws [ArgumentError] if trying to overwrite an already registered [route_name].
+ * Registeres a [view] for a particular [Route] identified by [route_name] in [Router].
+ * It is not allowed to override already registered view.
  */
   void registerView(String route_name, View view){
-    //TODO consider only warning
     if(this._views.containsKey(route_name)){
       throw new ArgumentError("Route name '$route_name' already in use in PageNavigator.");
     }
@@ -208,15 +204,14 @@ class PageNavigator {
   }
 
 /**
- * Navigates the browser to the selected route with given [data]. A [View] is selected and [Data] passed.
- * When [View] changes [Data] then [PageNavigator] calls history.replaceState with a new url.
- * From the other side when [PageNavigator.navigate] is called to an actual [View]
- *   the [Data] is updated and therefore [Vew] sould listen to [Data] changes.
- * Parameter [name] of the route to be navigated to.
- * Parameter [data] route parameter values.
- * Flag [pushState] if the new url (state) should be pushed to browser history.
- * Throws [StateError] when trying to navigate to a null [View].
- * Throws [ArgumentError] when no such route exists.
+ * Navigates the browser to the selected route with given [data].
+ * Then a [View] is selected and [Data] passed via updates are communicated.
+ * So when [View] changes [Data] then [PageNavigator] changes [History] url.
+ * Vice versa when client navigates to active route only [Data] is updated
+ * and [View.load] and [View.unload] is not called. Therefore [View] should
+ * listen to [Data] changes.
+ *
+ * Use flag [pushState] to push the new urlt to browser history.
  */
   void navigate(String name, Map data, {bool pushState}){
     if(this._views[name] == null){
