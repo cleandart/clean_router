@@ -6,15 +6,14 @@ import 'package:unittest/unittest.dart';
 import '../lib/router.dart';
 import 'package:unittest/mock.dart';
 import 'package:clean_data/clean_data.dart';
-import 'dart:async';
 
 // Spy for View
-class DummyView implements View{
+class DummyView implements View {
   Data data = null;
-  void load(Data data){
+  void load(Data data) {
     this.data = data;
   }
-  void unload(){
+  void unload() {
     this.data = null;
   }
 }
@@ -25,7 +24,7 @@ class MockView extends Mock implements DummyView {}
 class SpyView extends Mock implements View {
   DummyView _real;
 
-  SpyView(){
+  SpyView() {
     _real = new DummyView();
     when(callsTo('load')).alwaysCall(_real.load);
     when(callsTo('unload')).alwaysCall(_real.unload);
@@ -303,8 +302,8 @@ void main() {
     test('PageNavigator update url when Data updated', () {
       //==given
       var route = new Route("/dummy/{param}");
-      var paramsOld = {'param': 'bozi_pan'};
-      var paramsNew = {'param': 'mega_motac'};
+      var paramsOld = {'param': 'pipkos'};
+      var paramsNew = {'param': 'fajne'};
 
       var view = new SpyView();
       var history = new Mock();
@@ -315,20 +314,19 @@ void main() {
       navigator.navigate("page", paramsOld);
 
       //==when
-      view._real.data["param"] = 'mega_motac';
+      view._real.data["param"] = 'fajne';
 
       //==then
-      //TODO timeout
-      history.when(callsTo('replaceState')).alwaysCall(expectAsync0(() {
-        //2 stands for navigator.navigate AND when
-        history.getLogs(callsTo('replaceState')).verify(happenedExactly(2));
-
+      var checkReplaceCall = expectAsync0(() {
         expect(navigator.activePath, equals(route.path(paramsNew)));
 
         //only view.load was called at navigator.navigate
         view.getLogs(callsTo('load')).verify(happenedOnce);
         view.getLogs(callsTo('unload')).verify(happenedExactly(0));
-      }));
+      });
+
+      //listening to replace state confirms calling replace state
+      history.when(callsTo('replaceState')).alwaysCall((a, b, c) => checkReplaceCall());
     });
 
     test('PageNavigator navigate to same view with different params', () {

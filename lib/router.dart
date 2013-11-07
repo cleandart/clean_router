@@ -1,15 +1,12 @@
 // Copyright (c) 2013, Samuel Hapak, Peter Csiba. All rights reserved. Use of this source
 // code is governed by a BSD-style license that can be found in the LICENSE
 // file.
-//TODO nice commentary
 
 library vacuum.router;
 import "dart:core";
-import "dart:html";
 import 'package:clean_data/clean_data.dart';
 
 //TODO consider moving to a separate file
-//TODO test behaviour of view?
 /**
  * [View] is responsible for manipulating data received from server to be used for HTML.
  * Methods of [View] are called when [PageNavigator] matches the corresponding route
@@ -226,17 +223,16 @@ class PageNavigator {
     var newView = _views[routeName];
 
     //== update activeParameters and views
-    if(oldView != newView){
-      if(oldView != null){
+    if (oldView != newView){
+      if (oldView != null){
         oldView.unload();
       }
       var data = new Data.fromMap(parameters);
       newView.load(data);
       _activeParameters = data;
-      //_activeParameters.onChange.listen((ChangeSet change) => print("get ${change.changedItems.keys}"));
       _activeParameters.onChange.listen((ChangeSet change) => _updateHistoryState());
     }
-    else{
+    else {
       //TODO add Data.clear() to library
       //TODO add Data.update(Map), existing update, non-existing create other delete
       _activeParameters.removeAll(_activeParameters.keys.toList());
@@ -246,15 +242,15 @@ class PageNavigator {
     _activeRouteName = routeName;
 
     //== update history
-    if(pushState){
+    if (pushState){
       this.pushState();
     }
-    else{
+    else {
       _updateHistoryState();
     }
   }
 
-  void _updateHistoryState(){
+  void _updateHistoryState() {
     _history.replaceState(new Object(), "", activePath);
   }
 
@@ -264,18 +260,19 @@ class PageNavigator {
  * Note that [Data].onChange callback is called in PageNavigator
  *   it will only call [_history.replaceState] which will do no harm.
  */
-  void pushState(){
+  void pushState() {
     this._history.pushState(new Object(), "", activePath);
   }
 }
 
+//TODO move to separate fle
 /**
  * Should have the closest approximation of [dart.dom.history] as possible for browsers not supporting [HTML5].
  * This is implemented via tokens after hashes in url which are allowed to change by browsers.
  *
  * See http://api.dartlang.org/docs/releases/latest/dart_html/History.html#pushState .
  */
-class HashHistory {
+/*class HashHistory {
   /**
    * Navigates to url.
    */
@@ -290,7 +287,7 @@ class HashHistory {
     window.location.hash = '#' + url;
   }
 }
-
+*/
 
 
 
