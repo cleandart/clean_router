@@ -9,41 +9,58 @@ import 'package:clean_data/clean_data.dart';
 import 'dart:async';
 
 class HistoryMock extends Mock implements HashHistory {
-  String url = null;
-  void pushState(Object data, String title, [String url]){
-    this.url = url;
-  }
-  void replaceState(Object data, String title, [String url]){
-    this.url = url;
-  }
 }
 
 // History class for async testing
-class HistoryAsyncMock extends Mock implements HashHistory {
+class DummyTestHistory {
   String expected_title;
   String expected_url;
+  var test = true;
 
-  HistoryAsyncMock(this.expected_title, this.expected_url);
+  DummyTestHistory(this.expected_title, this.expected_url);
 
   void pushState(Object data, String title, [String url]){
-    expect(title, equals(this.expected_title));
-    expect(title, equals(this.expected_url));
+    if(test){
+      expect(title, equals(this.expected_title));
+      expect(title, equals(this.expected_url));
+    }
   }
   void replaceState(Object data, String title, [String url]){
-    expect(title, equals(this.expected_title));
-    expect(title, equals(this.expected_url));
+    if(test){
+      expect(title, equals(this.expected_title));
+      expect(title, equals(this.expected_url));
+    }
   }
 }
 
-class ViewMock extends Mock implements View {
-  var state = null;
+class AsyncHistoryMock extends Mock implements DummyTestHistory {
+  DummyTestHistory _real;
+
+  AsyncHistoryMock(DummyTestHistory history){
+    _real = history;
+    when(callsTo('replaceState')).alwaysCall(_real.replaceState);
+    when(callsTo('pushState')).alwaysCall(_real.pushState);
+  }
+}
+
+// Spy for View
+class DummyView implements View{
   Data data = null;
   void load(Data data){
-    this.state = #load;
     this.data = data;
   }
   void unload(){
-    this.state = #unload;
+    this.data = null;
+  }
+}
+
+class ViewSpy extends Mock implements DummyView {
+  DummyView _real;
+
+  ViewSpy(DummyView view){
+    _real = view;
+    when(callsTo('load')).alwaysCall(_real.load);
+    when(callsTo('unload')).alwaysCall(_real.unload);
   }
 }
 
@@ -254,8 +271,8 @@ void main() {
     var historyReplaceCalls = 0;
     var historyPushCalls = 0;
 
-    ViewMock viewStatic = new ViewMock();
-    ViewMock viewOneParameter = new ViewMock();
+    ViewSpy viewStatic = new ViewSpy(new DummyView());
+    ViewSpy viewOneParameter = new ViewSpy(new DummyView());
 
     PageNavigator pageNavigator = new PageNavigator(router, history);
     pageNavigator.registerView(routeNameStatic, viewStatic);
@@ -282,13 +299,12 @@ void main() {
 
       // page navigator state
       history.getLogs(callsTo("replaceState")).verify(happenedExactly(++historyReplaceCalls));
-
-      // histoty state
-      expect(history.url, equals(pathStatic));
+      expect(history.getLogs(callsTo('replaceState')).last.args[2], equals(pathStatic));
 
       // view methods called correctly
       viewStatic.getLogs(callsTo("load")).verify(happenedOnce);
-      expect(viewStatic.getLogs(callsTo('load')).first.args.first.toJson(), equals(params));
+      expect(viewStatic.getLogs(callsTo('load')).last.args.first, new isInstanceOf<Data>());
+      expect(viewStatic.getLogs(callsTo('load')).last.args.first.toJson(), equals(params));
 
       viewStatic.getLogs(callsTo("unload")).verify(happenedExactly(0));
     });
@@ -301,7 +317,7 @@ void main() {
 
       //then
       history.getLogs(callsTo("replaceState")).verify(happenedExactly(historyReplaceCalls));
-      history.getLogs(callsTo("pushState")).verify(++historyPushCalls);
+      history.getLogs(callsTo("pushState")).verify(happenedExactly(++historyPushCalls));
     });
 
     test('PageNavigator navigate to non existing site', () {
@@ -326,11 +342,11 @@ void main() {
       // history state
       history.getLogs(callsTo("replaceState")).verify(happenedExactly(++historyReplaceCalls));
       history.getLogs(callsTo("pushState")).verify(happenedExactly(historyPushCalls));
-      expect(history.url, equals(pathOneParameter));
+      expect(history.getLogs(callsTo('replaceState')).last.args[2], equals(pathOneParameter));
 
       //view methods called correctly
       viewOneParameter.getLogs(callsTo("load")).verify(happenedOnce);
-      expect(viewOneParameter.getLogs(callsTo('load')).first.args.first.toJson(), equals(params));
+      expect(viewOneParameter.getLogs(callsTo('load')).last.args.first.toJson(), equals(params));
 
       viewOneParameter.getLogs(callsTo("unload")).verify(happenedExactly(0));
     });
@@ -343,8 +359,10 @@ void main() {
       var pathOld = routeOneParameter.path(paramsOld);
       var pathNew = routeOneParameter.path(paramsNew);
 
-      var view = new ViewMock();
-      var historyAsync = new HistoryAsyncMock(null, pathNew);
+      var view = new ViewSpy(new DummyView());
+      var historyTest = new DummyTestHistory("", pathNew)
+        ..test = false;
+      var historyAsync = new AsyncHistoryMock(historyTest);
       var navigator = new PageNavigator(router, historyAsync);
 
       navigator.registerView(routeNameOneParameter, view);
@@ -352,10 +370,11 @@ void main() {
 
       //check if set up is correct
       expect(navigator.activePath, equals(pathOld));
-      expect(view.getLogs(callsTo('load')).first.args.first.toJson(), equals(paramsOld));
+      expect(view.getLogs(callsTo('load')).last.args.first.toJson(), equals(paramsOld));
+      historyTest.test = true;
 
       //==when
-      view.data[paramsNew.keys.first] = paramsNew.values.first;
+      view._real.data.add(paramsNew.keys.first, paramsNew.values.first);
 
       //==then
       //check if history is updated correctly
@@ -363,6 +382,8 @@ void main() {
     });
 
     test('PageNavigator navigate to same view with different params', () {
+      print("Printing history");
+      print(history.getLogs());
       //given
       Map paramsNew = {'one_parameter': 'trosku_pan'};
       var pathNew = routeOneParameter.path(paramsNew);
@@ -373,6 +394,10 @@ void main() {
       //then (should propagate the change in data to view)
       expect(pageNavigator.activePath, equals(pathNew));
 
+      //history state
+      history.getLogs(callsTo("replaceState")).verify(happenedExactly(++historyReplaceCalls));
+      expect(history.getLogs(callsTo('replaceState')).last.args[2], equals(pathNew));
+
       //view data state
       expect(viewOneParameter.data, isNot(null));
       expect(viewOneParameter.data.keys.first, equals(paramsNew.keys.first));
@@ -380,10 +405,6 @@ void main() {
       //no more load/unload for view
       viewOneParameter.getLogs(callsTo("load")).verify(happenedExactly(1));
       viewOneParameter.getLogs(callsTo("unload")).verify(happenedExactly(0));
-
-      //history state
-      expect(history.url, equals(pathNew));
-      history.getLogs(callsTo("replaceState")).verify(happenedExactly(++historyReplaceCalls));
     });
   });
 }
