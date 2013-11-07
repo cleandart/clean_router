@@ -1,38 +1,54 @@
 // Copyright (c) 2013, Samuel Hapak. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+//TODO test behaviour of view?
 
 import 'package:unittest/unittest.dart';
 import 'lib/router.dart';
 import 'package:unittest/mock.dart';
-import 'package:clean_data/clean_data.dart'; 
+import 'package:clean_data/clean_data.dart';
 import 'dart:async';
 
 class HistoryMock extends Mock implements HashHistory {
-  var url = null; 
-  var type = null; 
+  String url = null;
   void pushState(Object data, String title, [String url]){
     this.url = url;
-    this.type = "push";
   }
   void replaceState(Object data, String title, [String url]){
-    this.url = url; 
-    this.type = "replace";
+    this.url = url;
+  }
+}
+
+//
+class HistoryAsyncMock extends Mock implements HashHistory {
+  String expected_title;
+  String expected_url;
+
+  HistoryAsyncMock(this.expected_title, this.expected_url);
+
+  void pushState(Object data, String title, [String url]){
+    expect(title, equals(this.expected_title));
+    expect(title, equals(this.expected_url));
+  }
+  void replaceState(Object data, String title, [String url]){
+    expect(title, equals(this.expected_title));
+    expect(title, equals(this.expected_url));
   }
 }
 
 class ViewMock extends Mock implements View{
-  var state = null; 
-  Data data = null; 
+  var state = null;
+  Data data = null;
   void load(Data data){
-    this.state = "load";
-    this.data = data; 
+    this.state = #load;
+    this.data = data;
   }
   void unload(){
-    this.state = "unload";
+    this.state = #unload;
   }
 }
 
 void main() {
+  //TODO group('')
   test('Unsupported route format', () {
     expect(
       () => new Route("not-starting-with-backslash"),
@@ -152,37 +168,39 @@ void main() {
         throwsArgumentError
     );
   });
-  
+
   HistoryMock history = new HistoryMock();
-  var historyReplaceCalls = 0; 
-  ViewMock view2 = new ViewMock(); 
+  var historyReplaceCalls = 0;
+  ViewMock view2 = new ViewMock();
   ViewMock view3 = new ViewMock();
   Map views = {
-               "my-site" : null, 
-               "static"  : view2, 
+               "my-site" : null,
+               "static"  : view2,
                "one-param" : view3
   };
-  
-  test('PageNavigator constructed', (){
-    expect(new PageNavigator(router, history, views), isNot(null));
-  });
-  
+
+
   PageNavigator pageNavigator = new PageNavigator(router, history, views);
-  
+
   test('PageNavigator navigate to static page', () {
-    pageNavigator.navigate("static", {}); 
-    
-    String route2Path = route2.path({}); 
-    
-    expect(pageNavigator.getActivePath(), equals(route2Path));
-    
+    // TODO GWT everywehre
+    // given
+    var data = {};
+    var staticRoutePath = route2.path(data);
+
+    // when
+    pageNavigator.navigate("static", data);
+
+    // then
+    expect(pageNavigator.activePath, equals(staticRoutePath));
+
     history.getLogs(callsTo("replaceState")).verify(happenedExactly(++historyReplaceCalls));
-    expect(history.url, equals(route2Path)); 
-    
-    view2.getLogs(callsTo("load")).verify(happenedExactly(1));
-    view2.getLogs(callsTo("unload")).verify(happenedExactly(1));
-    expect(view2.data, isNot(null));
-    expect(view2.data.isEmpty, true); 
+    expect(history.url, equals(staticRoutePath));
+
+    view2.getLogs(callsTo("load")).verify(happenedOnce);
+    expect(view2.getLogs(callsTo('load')).first.args.first.toJson(), equals(data));
+
+    view2.getLogs(callsTo("unload")).verify(happenedExactly(0));
   });
 
   test('PageNavigator push state', () {
@@ -194,59 +212,54 @@ void main() {
     expect(
         () => pageNavigator.navigate("my-site", {}),
         throwsNullThrownError
-    ); 
+    );
   });
 
   test('PageNavigator navigate to one param page', () {
-      Map params = {'one_parameter': 'suchy_pes'}; 
-      pageNavigator.navigate('one-param', params); 
-      
-      String route3Path = route3.path(params); 
-      
-      expect(pageNavigator.getActivePath(), equals(route3Path));
-      
+      Map params = {'one_parameter': 'suchy_pes'};
+      pageNavigator.navigate('one-param', params);
+
+      String route3Path = route3.path(params);
+
+      expect(pageNavigator.activePath, equals(route3Path));
+
       history.getLogs(callsTo("replaceState")).verify(happenedExactly(++historyReplaceCalls));
-      expect(history.url, equals(route3Path)); 
+      expect(history.url, equals(route3Path));
 
       view2.getLogs(callsTo("load")).verify(happenedExactly(1));
       view2.getLogs(callsTo("unload")).verify(happenedExactly(1));
-      
+
       view3.getLogs(callsTo("load")).verify(happenedExactly(1));
       view3.getLogs(callsTo("load")).verify(happenedExactly(0));
-      expect(view3.data, isNot(null));
-      expect(view3.data.keys.first, equals(params.keys.first));
-      expect(view3.data.values.first, equals(params.values.first)); 
+
+      //TODO test if load was called with good arguments
   });
-  
+
   test('PageNavigator update url when Data updated', () {
-    Map newParams = {'one_parameter': 'bozi_pan'}; 
-    String route3Path = route3.path(newParams); 
-    
+    Map newParams = {'one_parameter': 'bozi_pan'};
+    String route3Path = route3.path(newParams);
+
     view3.data[newParams.keys.first] = newParams.values.first;
-    
-    //TODO how to do it? 
-    //asynchronous check
-    Timer.run(() { 
-      expect(pageNavigator.getActivePath(), equals(route3Path));
-      history.getLogs(callsTo("replaceState")).verify(happenedExactly(++historyReplaceCalls));
-      expect(history.url, equals(route3Path)); 
-    });
+
+    var hasync = new HistoryAsyncMock(null, route3Path);
+
+    new Timer(new Duration(milliseconds: 100), expectAsync0(hasync.replaceState));
   });
 
   test('PageNavigator navigate to same view with different params', () {
-    Map newParams = {'one_parameter': 'mega_motac'}; 
-    String route3Path = route3.path(newParams); 
-    
-    pageNavigator.navigate('one-param', newParams); 
-    expect(pageNavigator.getActivePath(), equals(route3Path));
-    
+    Map newParams = {'one_parameter': 'mega_motac'};
+    String route3Path = route3.path(newParams);
+
+    pageNavigator.navigate('one-param', newParams);
+    expect(pageNavigator.activePath, equals(route3Path));
+
     expect(view3.data, isNot(null));
     expect(view3.data.keys.first, equals(newParams.keys.first));
-    expect(view3.data.values.first, equals(newParams.values.first)); 
-    
+    expect(view3.data.values.first, equals(newParams.values.first));
+
     history.getLogs(callsTo("replaceState")).verify(happenedExactly(++historyReplaceCalls));
-    expect(history.url, equals(route3Path)); 
-    
+    expect(history.url, equals(route3Path));
+
     view3.getLogs(callsTo("load")).verify(happenedExactly(1));
     view3.getLogs(callsTo("unload")).verify(happenedExactly(0));
   });
