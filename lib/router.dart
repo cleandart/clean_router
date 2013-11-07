@@ -178,29 +178,30 @@ class PageNavigator {
   Data _activeParameters;
   Map _views;
 
-  String get activePath => this._router.routePath(this._activeRouteName, this._activeParameters);
+  String get activePath => _router.routePath(_activeRouteName, _activeParameters);
 
 /**
  * Creates new [PageNavigator].
  */
   PageNavigator(this._router, this._history){
-    if(this._router == null){
+    if(_router == null){
       throw new ArgumentError("Cannot construct PageNavigator as router is null.");
     }
-    if(this._history == null){
+    if(_history == null){
       throw new ArgumentError("Cannot construct PageNavigator as history is null.");
     }
+    _views = {};
   }
 
 /**
  * Registeres a [view] for a particular [Route] identified by [route_name] in [Router].
  * It is not allowed to override already registered view.
  */
-  void registerView(String route_name, View view){
-    if(this._views.containsKey(route_name)){
-      throw new ArgumentError("Route name '$route_name' already in use in PageNavigator.");
+  void registerView(String routeName, View view){
+    if(_views.containsKey(routeName)){
+      throw new ArgumentError("Route name '$routeName' already in use in PageNavigator.");
     }
-    this._views[route_name] = view;
+    _views[routeName] = view;
   }
 
 /**
@@ -213,17 +214,42 @@ class PageNavigator {
  *
  * Use flag [pushState] to push the new urlt to browser history.
  */
-  void navigate(String name, Map data, {bool pushState}){
-    if(this._views[name] == null){
-      throw new StateError("View not found for '$name'");
+  void navigate(String routeName, Map parameters, {bool pushState : false}){
+    //== prepare variables
+    var path = _router.routePath(routeName, parameters);
+
+    if(!_views.containsKey(routeName)){
+      throw new ArgumentError("View not found for '$routeName'");
     }
-    /* TODO
-    *        //include discussion, that data holder should listen to changes
-    *        if same name no load and unload
-    *        data.clear
-      *        data.addAll
-        *      pushState -> pushes actual state, don't block anything so on notify callback the replaceState will be called
-        */
+
+    var oldView = _views[_activeRouteName];
+    var newView = _views[routeName];
+
+    //== update activeParameters and views
+    if(oldView != newView){
+      if(oldView != null){
+        oldView.unload();
+      }
+      var data = new Data.fromMap(parameters);
+      newView.load(data);
+      _activeParameters = data;
+    }
+    else{
+      //TODO add Data.clear() to library
+      //TODO add Data.update(Map), existing update, non-existing create other delete
+      _activeParameters.removeAll(_activeParameters.keys.toList());
+      _activeParameters.addAll(parameters);
+    }
+
+    _activeRouteName = routeName;
+
+    //== update history
+    if(pushState){
+      this.pushState();
+    }
+    else{
+      _history.replaceState(new Object(), "", activePath);
+    }
   }
 
 /**
@@ -233,7 +259,7 @@ class PageNavigator {
  *   it will only call [_history.replaceState] which will do no harm.
  */
   void pushState(){
-    this._history.pushState(new Object(), "", this.activePath);
+    this._history.pushState(new Object(), "", activePath);
   }
 }
 

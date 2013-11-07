@@ -307,7 +307,7 @@ void main() {
     test('PageNavigator navigate to non existing site', () {
       expect(
           () => pageNavigator.navigate("non-existing-site", {}),
-          throwsStateError
+          throwsArgumentError
       );
     });
 
