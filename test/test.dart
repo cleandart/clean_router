@@ -244,8 +244,9 @@ void main() {
       // given
       var router = new MockRouter();
       var view = new MockView();
+      var history = new Mock();
       router.when(callsTo('routePath')).alwaysReturn("/dummy/url/");
-      var pageNavigator = new PageNavigator(router, new Mock());
+      var pageNavigator = new PageNavigator(router, history);
       pageNavigator.registerView("static", view);
 
       // when
@@ -259,6 +260,8 @@ void main() {
       expect(args[0], equals('static'));
       expect(args[1], equals({}));
 
+      history.getLogs(callsTo('replaceState')).verify(happenedOnce);
+
       view.getLogs(callsTo('load')).verify(happenedOnce);
       expect(view.getLogs().first.args.first.isEmpty, isTrue);
     });
@@ -266,20 +269,19 @@ void main() {
     test('PageNavigator push state', () {
       //given
       var router = new MockRouter();
+      var view = new MockView();
+      var history = new Mock();
       router.when(callsTo('routePath')).alwaysReturn("/dummy/url/");
 
-      var history = new Mock();
-      var view = new MockView();
-
-      var pageNavigator = new PageNavigator(router, view);
+      var pageNavigator = new PageNavigator(router, history);
       pageNavigator.registerView("static", view);
-      pageNavigator.navigate('static', {});
+      pageNavigator.navigate("static", {});
 
       //when
       pageNavigator.pushState();
 
       //then
-      history.getLogs(callsTo('replace')).verify(happenedOnce);
+      history.getLogs(callsTo('replaceState')).verify(happenedOnce);
       history.getLogs(callsTo('pushState')).verify(happenedOnce);
     });
 
@@ -312,7 +314,6 @@ void main() {
       navigator.registerView("page", view);
       navigator.navigate("page", paramsOld);
 
-      //assume set up is c
       //==when
       view._real.data["param"] = 'mega_motac';
 
@@ -337,7 +338,7 @@ void main() {
       var paramsNew = {'param': 'mega_motac'};
       var pathNew = route.path(paramsNew);
 
-      var view = new MockView();
+      var view = new SpyView();
       var history = new Mock();
 
       var navigator = new PageNavigator(new Router("host", {"page" : route}), history);
@@ -359,8 +360,8 @@ void main() {
       expect(history.getLogs(callsTo('replaceState')).last.args[2], equals(pathNew));
 
       //view data state
-      expect(view.data.keys.first, equals(paramsNew.keys.first));
-      expect(view.data.values.first, equals(paramsNew.values.first));
+      expect(view._real.data.keys.first, equals(paramsNew.keys.first));
+      expect(view._real.data.values.first, equals(paramsNew.values.first));
       //no more load/unload for view
       view.getLogs(callsTo("load")).verify(happenedExactly(1));
       view.getLogs(callsTo("unload")).verify(happenedExactly(0));

@@ -233,6 +233,8 @@ class PageNavigator {
       var data = new Data.fromMap(parameters);
       newView.load(data);
       _activeParameters = data;
+      //_activeParameters.onChange.listen((ChangeSet change) => print("get ${change.changedItems.keys}"));
+      _activeParameters.onChange.listen((ChangeSet change) => _updateHistoryState());
     }
     else{
       //TODO add Data.clear() to library
@@ -248,8 +250,12 @@ class PageNavigator {
       this.pushState();
     }
     else{
-      _history.replaceState(new Object(), "", activePath);
+      _updateHistoryState();
     }
+  }
+
+  void _updateHistoryState(){
+    _history.replaceState(new Object(), "", activePath);
   }
 
 /**
