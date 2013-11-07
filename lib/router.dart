@@ -178,7 +178,7 @@ class PageNavigator {
   Data _activeParameters;
   Map _views;
 
-  String get activePath => _router.routePath(_activeRouteName, _activeParameters);
+  String get activePath => _activeRouteName == null ? null :_router.routePath(_activeRouteName, _activeParameters);
 
 /**
  * Creates new [PageNavigator].

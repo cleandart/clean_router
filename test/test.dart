@@ -8,41 +8,6 @@ import 'package:unittest/mock.dart';
 import 'package:clean_data/clean_data.dart';
 import 'dart:async';
 
-class HistoryMock extends Mock implements HashHistory {
-}
-
-// History class for async testing
-class DummyTestHistory {
-  String expected_title;
-  String expected_url;
-  var test = true;
-
-  DummyTestHistory(this.expected_title, this.expected_url);
-
-  void pushState(Object data, String title, [String url]){
-    if(test){
-      expect(title, equals(this.expected_title));
-      expect(title, equals(this.expected_url));
-    }
-  }
-  void replaceState(Object data, String title, [String url]){
-    if(test){
-      expect(title, equals(this.expected_title));
-      expect(title, equals(this.expected_url));
-    }
-  }
-}
-
-class AsyncHistoryMock extends Mock implements DummyTestHistory {
-  DummyTestHistory _real;
-
-  AsyncHistoryMock(DummyTestHistory history){
-    _real = history;
-    when(callsTo('replaceState')).alwaysCall(_real.replaceState);
-    when(callsTo('pushState')).alwaysCall(_real.pushState);
-  }
-}
-
 // Spy for View
 class DummyView implements View{
   Data data = null;
@@ -54,11 +19,14 @@ class DummyView implements View{
   }
 }
 
-class ViewSpy extends Mock implements DummyView {
+class MockRouter extends Mock implements Router {}
+class MockView extends Mock implements DummyView {}
+
+class SpyView extends Mock implements View {
   DummyView _real;
 
-  ViewSpy(DummyView view){
-    _real = view;
+  SpyView(){
+    _real = new DummyView();
     when(callsTo('load')).alwaysCall(_real.load);
     when(callsTo('unload')).alwaysCall(_real.unload);
   }
@@ -251,160 +219,151 @@ void main() {
  */
   group('PageNavigator', () {
 
-    final pathStatic = "/just/static/one";
-    final patternOneParameter = "/route/{one_parameter}/";
-
-    final routeStatic = new Route(pathStatic);
-    final routeOneParameter = new Route(patternOneParameter);
-
-    final routeNameStatic = "static";
-    final routeNameOneParameter = "one_parameter";
-
-    final hostName = 'http://www.google.com';
-
-    var router = new Router(hostName, {
-      routeNameStatic: routeStatic,
-      routeNameOneParameter: routeOneParameter
-    });
-
-    var history = new HistoryMock();
-    var historyReplaceCalls = 0;
-    var historyPushCalls = 0;
-
-    ViewSpy viewStatic = new ViewSpy(new DummyView());
-    ViewSpy viewOneParameter = new ViewSpy(new DummyView());
-
-    PageNavigator pageNavigator = new PageNavigator(router, history);
-    pageNavigator.registerView(routeNameStatic, viewStatic);
-    pageNavigator.registerView(routeNameOneParameter, viewOneParameter);
 
     //when & test
     test('PageNavigator should be initialized with no active route', () {
-      expect(
-        () => pageNavigator.activePath,
-        throwsArgumentError
-      );
-    });
-
-    //first transition from null to static page
-    test('PageNavigator navigate to static page', () {
-      // given initialized navigator at null state
-      var params = {};
+      // given
 
       // when
-      pageNavigator.navigate(routeNameStatic, params);
+      var pageNavigator = new PageNavigator(new MockRouter(), new Mock());
 
-      // then ========
-      expect(pageNavigator.activePath, equals(pathStatic));
-
-      // page navigator state
-      history.getLogs(callsTo("replaceState")).verify(happenedExactly(++historyReplaceCalls));
-      expect(history.getLogs(callsTo('replaceState')).last.args[2], equals(pathStatic));
-
-      // view methods called correctly
-      viewStatic.getLogs(callsTo("load")).verify(happenedOnce);
-      expect(viewStatic.getLogs(callsTo('load')).last.args.first, new isInstanceOf<Data>());
-      expect(viewStatic.getLogs(callsTo('load')).last.args.first.toJson(), equals(params));
-
-      viewStatic.getLogs(callsTo("unload")).verify(happenedExactly(0));
-    });
-
-    test('PageNavigator push state', () {
-      //given active page is static page (one transition)
-
-      //when
-      pageNavigator.pushState();
-
-      //then
-      history.getLogs(callsTo("replaceState")).verify(happenedExactly(historyReplaceCalls));
-      history.getLogs(callsTo("pushState")).verify(happenedExactly(++historyPushCalls));
+      // then
+      expect(pageNavigator.activePath, isNull);
     });
 
     test('PageNavigator navigate to non existing site', () {
+      var pageNavigator = new PageNavigator(new MockRouter(), new MockView());
       expect(
           () => pageNavigator.navigate("non-existing-site", {}),
           throwsArgumentError
       );
     });
 
-    test('PageNavigator navigate to one param page', () {
-      //given active page is static page (one transition)
-      var params = {'one_parameter': 'suchy_pes'};
-      var pathOneParameter = routeOneParameter.path(params);
+    //transition from null to static page
+    test('PageNavigator navigate to static page', () {
+      // given
+      var router = new MockRouter();
+      var view = new MockView();
+      router.when(callsTo('routePath')).alwaysReturn("/dummy/url/");
+      var pageNavigator = new PageNavigator(router, new Mock());
+      pageNavigator.registerView("static", view);
+
+      // when
+      pageNavigator.navigate("static", {});
+
+      // then
+      expect(pageNavigator.activePath, equals("/dummy/url/"));
+
+      router.getLogs(callsTo('routePath')).verify(happenedAtLeastOnce);
+      var args = router.getLogs(callsTo('routePath')).first.args;
+      expect(args[0], equals('static'));
+      expect(args[1], equals({}));
+
+      view.getLogs(callsTo('load')).verify(happenedOnce);
+      expect(view.getLogs().first.args.first.isEmpty, isTrue);
+    });
+
+    test('PageNavigator push state', () {
+      //given
+      var router = new MockRouter();
+      router.when(callsTo('routePath')).alwaysReturn("/dummy/url/");
+
+      var history = new Mock();
+      var view = new MockView();
+
+      var pageNavigator = new PageNavigator(router, view);
+      pageNavigator.registerView("static", view);
+      pageNavigator.navigate('static', {});
 
       //when
-      pageNavigator.navigate(routeNameOneParameter, params);
+      pageNavigator.pushState();
 
-      //then =========
-      //  PageNavigator state
-      expect(pageNavigator.activePath, equals(pathOneParameter));
+      //then
+      history.getLogs(callsTo('replace')).verify(happenedOnce);
+      history.getLogs(callsTo('pushState')).verify(happenedOnce);
+    });
 
-      // history state
-      history.getLogs(callsTo("replaceState")).verify(happenedExactly(++historyReplaceCalls));
-      history.getLogs(callsTo("pushState")).verify(happenedExactly(historyPushCalls));
-      expect(history.getLogs(callsTo('replaceState')).last.args[2], equals(pathOneParameter));
+    test('PageNavigator navigate to one param page', () {
+      // given
+      var router = new MockRouter();
+      var view = new MockView();
+      router.when(callsTo('routePath')).alwaysReturn("/dummy/parameter_value/");
+      var pageNavigator = new PageNavigator(router, new Mock());
+      pageNavigator.registerView("one_param", view);
 
-      //view methods called correctly
-      viewOneParameter.getLogs(callsTo("load")).verify(happenedOnce);
-      expect(viewOneParameter.getLogs(callsTo('load')).last.args.first.toJson(), equals(params));
+      // when
+      pageNavigator.navigate("one_param", {"param":"parameter_value"});
 
-      viewOneParameter.getLogs(callsTo("unload")).verify(happenedExactly(0));
+      // then
+      expect(pageNavigator.activePath, equals("/dummy/parameter_value/"));
     });
 
     test('PageNavigator update url when Data updated', () {
-      //==given active page is one parameter page (two transitions)
-      //Note: forget global navigator, history and views
-      var paramsOld = {'one_parameter': 'bozi_pan'};
-      var paramsNew = {'one_parameter': 'mega_motac'};
-      var pathOld = routeOneParameter.path(paramsOld);
-      var pathNew = routeOneParameter.path(paramsNew);
+      //==given
+      var route = new Route("/dummy/{param}");
+      var paramsOld = {'param': 'bozi_pan'};
+      var paramsNew = {'param': 'mega_motac'};
 
-      var view = new ViewSpy(new DummyView());
-      var historyTest = new DummyTestHistory("", pathNew)
-        ..test = false;
-      var historyAsync = new AsyncHistoryMock(historyTest);
-      var navigator = new PageNavigator(router, historyAsync);
+      var view = new SpyView();
+      var history = new Mock();
 
-      navigator.registerView(routeNameOneParameter, view);
-      navigator.navigate(routeNameOneParameter, paramsOld);
+      var navigator = new PageNavigator(new Router("host", {"page" : route}), history);
 
-      //check if set up is correct
-      expect(navigator.activePath, equals(pathOld));
-      expect(view.getLogs(callsTo('load')).last.args.first.toJson(), equals(paramsOld));
-      historyTest.test = true;
+      navigator.registerView("page", view);
+      navigator.navigate("page", paramsOld);
 
+      //assume set up is c
       //==when
-      view._real.data.add(paramsNew.keys.first, paramsNew.values.first);
+      view._real.data["param"] = 'mega_motac';
 
       //==then
-      //check if history is updated correctly
-      new Timer(new Duration(milliseconds: 100), expectAsync0(historyAsync.replaceState));
+      //TODO timeout
+      history.when(callsTo('replaceState')).alwaysCall(expectAsync0(() {
+        //2 stands for navigator.navigate AND when
+        history.getLogs(callsTo('replaceState')).verify(happenedExactly(2));
+
+        expect(navigator.activePath, equals(route.path(paramsNew)));
+
+        //only view.load was called at navigator.navigate
+        view.getLogs(callsTo('load')).verify(happenedOnce);
+        view.getLogs(callsTo('unload')).verify(happenedExactly(0));
+      }));
     });
 
     test('PageNavigator navigate to same view with different params', () {
-      print("Printing history");
-      print(history.getLogs());
-      //given
-      Map paramsNew = {'one_parameter': 'trosku_pan'};
-      var pathNew = routeOneParameter.path(paramsNew);
+      //==given
+      var route = new Route("/dummy/{param}");
+      var paramsOld = {'param': 'bozi_pan'};
+      var paramsNew = {'param': 'mega_motac'};
+      var pathNew = route.path(paramsNew);
 
-      //when
-      pageNavigator.navigate(routeNameOneParameter, paramsNew);
+      var view = new MockView();
+      var history = new Mock();
 
-      //then (should propagate the change in data to view)
-      expect(pageNavigator.activePath, equals(pathNew));
+      var navigator = new PageNavigator(new Router("host", {"page" : route}), history);
+
+      navigator.registerView("page", view);
+      navigator.navigate("page", paramsOld);
+
+      //assume set up is correct (tested previously)
+
+      //==when
+      navigator.navigate("page", paramsNew);
+
+      //==then (should propagate the change in data to view)
+      expect(navigator.activePath, equals(pathNew));
 
       //history state
-      history.getLogs(callsTo("replaceState")).verify(happenedExactly(++historyReplaceCalls));
+      //2 for navigate(old) and navigate(new)
+      history.getLogs(callsTo("replaceState")).verify(happenedExactly(2));
       expect(history.getLogs(callsTo('replaceState')).last.args[2], equals(pathNew));
 
       //view data state
-      expect(viewOneParameter.data, isNot(null));
-      expect(viewOneParameter.data.keys.first, equals(paramsNew.keys.first));
-      expect(viewOneParameter.data.values.first, equals(paramsNew.values.first));
+      expect(view.data.keys.first, equals(paramsNew.keys.first));
+      expect(view.data.values.first, equals(paramsNew.values.first));
       //no more load/unload for view
-      viewOneParameter.getLogs(callsTo("load")).verify(happenedExactly(1));
-      viewOneParameter.getLogs(callsTo("unload")).verify(happenedExactly(0));
+      view.getLogs(callsTo("load")).verify(happenedExactly(1));
+      view.getLogs(callsTo("unload")).verify(happenedExactly(0));
     });
   });
 }
