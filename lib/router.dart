@@ -172,26 +172,18 @@ class Router {
  * It updates url (replaceState, pushState) if the url params are changed in the view.
  */
 class PageNavigator {
-  Router _router;
-  dynamic _history;
+  final Router _router;
+  final dynamic _history;
   String _activeRouteName;
   Data _activeParameters;
-  Map _views;
+  final Map _views = {};
 
   String get activePath => _activeRouteName == null ? null :_router.routePath(_activeRouteName, _activeParameters);
 
 /**
  * Creates new [PageNavigator].
  */
-  PageNavigator(this._router, this._history){
-    if(_router == null){
-      throw new ArgumentError("Cannot construct PageNavigator as router is null.");
-    }
-    if(_history == null){
-      throw new ArgumentError("Cannot construct PageNavigator as history is null.");
-    }
-    _views = {};
-  }
+  PageNavigator(this._router, this._history);
 
 /**
  * Registeres a [view] for a particular [Route] identified by [route_name] in [Router].
@@ -212,9 +204,9 @@ class PageNavigator {
  * and [View.load] and [View.unload] is not called. Therefore [View] should
  * listen to [Data] changes.
  *
- * Use flag [pushState] to push the new urlt to browser history.
+ * Use flag [pushState] to push the new url to browser history.
  */
-  void navigate(String routeName, Map parameters, {bool pushState : false}){
+  void navigate(String routeName, Map parameters, {bool pushState: false}){
     //== prepare variables
     var path = _router.routePath(routeName, parameters);
 
@@ -252,7 +244,15 @@ class PageNavigator {
       _updateHistoryState();
     }
   }
-
+/**
+ *  Navigates the browser to the selected Path using [navigate] function.
+ * 
+ */
+  void navigateToPath(String Path, {bool pushState: false}){
+    var routeInfo = _router.match(Path);
+    navigate(routeInfo[0], routeInfo[1], pushState: pushState);
+  }
+  
   void _updateHistoryState() {
     _history.replaceState(new Object(), "", activePath);
   }
