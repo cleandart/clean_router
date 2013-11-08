@@ -203,7 +203,7 @@ class PageNavigator {
  *
  * Use flag [pushState] to push the new url to browser history.
  */
-  void navigate(String routeName, Map parameters, {bool pushState : false}){
+  void navigate(String routeName, Map parameters, {bool pushState: false}){
     //== prepare variables
     var path = _router.routePath(routeName, parameters);
 
@@ -240,6 +240,14 @@ class PageNavigator {
     else {
       _updateHistoryState();
     }
+  }
+/**
+ *  Navigates the browser to the selected Path using [navigate] function.
+ * 
+ */
+  void navigateToPath(String Path, {bool pushState: false}){
+    var routeInfo = _router.match(Path);
+    navigate(routeInfo[0], routeInfo[1], pushState: pushState);
   }
   
   void _updateHistoryState() {

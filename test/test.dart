@@ -264,7 +264,28 @@ void main() {
       view.getLogs(callsTo('load')).verify(happenedOnce);
       expect(view.getLogs().first.args.first.isEmpty, isTrue);
     });
+    
+    test('PageNavigator navigate to path.', () {
+      // given
+      var router = new MockRouter();
+      var view = new MockView();
+      router.when(callsTo('match')).alwaysReturn(["route", {'arg': '1'}]);
+      router.when(callsTo('routePath')).alwaysReturn("/dummy/url/");
+      var pageNavigator = new PageNavigator(router, new Mock());
+      pageNavigator.registerView("route", view);
 
+      // when
+      pageNavigator.navigateToPath("/dummy/url/");
+
+      // then
+      expect(pageNavigator.activePath, equals("/dummy/url/"));
+
+      router.getLogs(callsTo('match')).verify(happenedOnce);
+
+      view.getLogs(callsTo('load')).verify(happenedOnce);
+      expect(view.getLogs().first.args.first.containsKey('arg'),isTrue);
+    });
+    
     test('PageNavigator push state', () {
       //given
       var router = new MockRouter();
