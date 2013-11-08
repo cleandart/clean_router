@@ -33,183 +33,191 @@ class SpyView extends Mock implements View {
 
 void main() {
   group('Route', () {
-    //given
-    final routeStatic = new Route("/just/static/one");
-    final routeOneParameter = new Route("/route/{one_parameter}/");
-    final routeTwoVariables = new Route("/my-site/{var1}/{var2}/your-site/");
-
-    //when & test
     test('Unsupported route format', () {
-      expect(
-        () => new Route("not-starting-with-backslash"),
-        throwsFormatException
-      );
-      //TODO what should be the behaviour?
-      /*
-      expect(
-        () => new Route("/not-ending-with-backslash"),
-        throwsFormatException
-      );*/
-      expect(
-        () => new Route("/#some-chars-not-allowed"),
-        throwsFormatException
-      );
-      expect(
-        () => new Route("/some-chars/{not-allowed}/in/variable/"),
-        throwsFormatException
-      );
-      expect(
-        () => new Route("/variable-must-begin-with/{_alpha}/"),
-        throwsFormatException
-      );
+      expect(() => new Route(""), throwsFormatException);
+      expect(() => new Route("not-starting-with-slash/"),throwsFormatException);
+      expect(() => new Route("/not-ending-with-slash"),  throwsFormatException);
+      expect(() => new Route("/#some-chars-not-allowed"),throwsFormatException);
+      expect(() => new Route("/?some-chars-not-allowed"),throwsFormatException);
+      expect(() => new Route("/!some-chars-not-allowed"),throwsFormatException);
+      expect(() => new Route("/.some-chars-not-allowed"),throwsFormatException);
+      expect(() => new Route("/{not_closed/"),           throwsFormatException);
+      expect(() => new Route("/not_open}/"),             throwsFormatException);
+      expect(() => new Route("/{{more-brackets}/"),      throwsFormatException);
+      expect(() => new Route("/{more-brackets}}/"),      throwsFormatException);
     });
 
-    test('Basic route matching', () {
-      expect(
-          routeTwoVariables.match("/my-site/"),
-          isNull
-      );
-      expect(
-        routeTwoVariables.match("/my-site/432/123/your-site/"),
-        equals({'var1': '432', 'var2': '123'})
-      );
-      expect(
-        routeTwoVariables.match("/my_site/123/321/your-site/"),
-        isNull
-      );
+    test('Supported route format', () {
+      expect(new Route("/"), isNot(isException));
+      expect(new Route("//"), isNot(isException));
+      expect(new Route("////////////////////////"), isNot(isException));
+      expect(new Route("/{anything-here4!@#\$%^&*()\\\n}/"), isNot(isException));
     });
 
-    test('Map returned from route matching is Map', () {
-      expect(
-        routeTwoVariables.match('/my-site/432/123/your-site/'),
-        new isInstanceOf<Map>()
-      );
+    test('Matching - static not match', () {
+      // given
+      var route = new Route("/route/");
+
+      // when
+      var match = route.match("/other/");
+
+      // then
+      expect(match, isNull);
     });
 
-    test('Basic route generation', () {
-      expect(
-          routeTwoVariables.path({'var1': 'Hodnota', 'var2': 'Zloba'}),
-          equals('/my-site/Hodnota/Zloba/your-site/')
-      );
-      expect(
-          () => routeTwoVariables.path({'var1': 'Value'}),
-          throwsFormatException
-      );
+    test('Matching - static match', () {
+      // given
+      var route = new Route("/route/");
+
+      // when
+      var match = route.match("/route/");
+
+      // then
+      expect(match, equals({}));
     });
 
-    test('Url escape variable values', () {
-      var params1 = {'var1': 'hello/dolly', 'var2': 'Ok'};
-      var params2 = {'var1': 'hello darling', 'var2': 'Here/we/are'};
+    test('Matching - one parameter match', () {
+      // given
+      var route = new Route("/route/{param}/");
 
-      expect(
-        routeTwoVariables.match(routeTwoVariables.path(params1)),
-        equals(params1)
-      );
-      expect(
-        routeTwoVariables.match(routeTwoVariables.path(params2)),
-        equals(params2)
-      );
+      // when
+      var match = route.match("/route/value/");
+
+      // then
+      expect(match, equals({"param" : "value"}));
+    });
+
+    test('Matching - several parameter match', () {
+      // given
+      var route = new Route("/route/{param1}/name/{param2}/{param3}/");
+
+      // when
+      var match = route.match("/route/value1/name/value2/value3/");
+
+      // then
+      expect(match, equals({
+        "param1" : "value1",
+        "param2" : "value2",
+        "param3" : "value3",
+      }));
+    });
+
+    test('Generation - two params', () {
+      // given
+      var route = new Route("/route/{param1}/{param2}/");
+
+      // when
+      var path = route.path({'param1': 'value1', 'param2': 'value2'});
+
+      // then
+      expect(path, equals('/route/value1/value2/'));
+    });
+
+    test('Generation - not enough params', () {
+      // given
+      var route = new Route("/route/{param1}/{param2}/");
+
+      // when & then
+      expect(() => route.path({'param1': 'value1'}), throwsArgumentError);
+    });
+
+    test('Escape variable values', () {
+      // given
+      var route = new Route("/route/{param}/");
+      var params = {'param': '/\\!@#\$%^&*(){}|"\':;/.,-=?<>'};
+
+      // when
+      var path = route.path(params);
+
+      // then
+      expect(path, equals("/route/${Uri.encodeComponent(params['param'])}/"));
+    });
+
+    test('Parse esacaped variable values from url', () {
+      // given
+      var route = new Route("/route/{param1}/");
+      var params = {'param1': '/\\!@#\$%^&*(){}|"\':;/.,-=?<>'};
+
+      // when
+      var params_there_and_back = route.match(route.path(params));
+
+      // then
+      expect(params, equals(params_there_and_back));
     });
   });
 
   group('Router', () {
-    //given
-    final pathStatic = "/just/static/one";
-    final patternOneParameter = "/route/{one_parameter}/";
-    final patternTwoVariables = "/my-site/{var1}/{var2}/your-site/";
+    test('Route to path - static', () {
+      //given
+      Router router = new Router("", {'static' : new Route('/static/')});
 
-    final routeStatic = new Route(pathStatic);
-    final routeOneParameter = new Route(patternOneParameter);
-    final routeTwoVariables = new Route(patternTwoVariables);
+      //when
+      var path = router.routePath("static", {});
 
-    final routeNameStatic = "static";
-    final routeNameOneParameter = "one_parameter";
-    final routeNameTwoVariables = "two_variables";
-
-    final hostName = 'http://www.google.com';
-
-    var router = new Router(hostName, {
-      routeNameStatic: routeStatic,
-      routeNameOneParameter: routeOneParameter,
-      routeNameTwoVariables: routeTwoVariables
+      //then
+      expect(path, equals('/static/'));
     });
 
-    //when & test
-    test('Router route to path', () {
-      expect(
-        router.routePath(routeNameStatic, {}),
-        equals(pathStatic)
-      );
-      expect(
-        router.routePath(routeNameTwoVariables, {'var1': 'value1', 'var2': 'value2'}),
-        equals('/my-site/value1/value2/your-site/')
-      );
-      expect(
-        router.routePath(routeNameOneParameter, {'one_parameter': 'some_value'}),
-        equals('/route/some_value/')
-      );
+    test('Route to path - not existing', () {
+      //given
+      Router router = new Router("", {'static' : new Route('/static/')});
+
+      //when & then
+      expect(() => router.routePath("not-existing", {}), throwsArgumentError);
     });
 
-    test('Router route to url', () {
-      expect(
-        router.routeUrl(routeNameStatic, {}),
-        equals(hostName + pathStatic)
-      );
-      expect(
-        router.routeUrl(routeNameTwoVariables, {'var1': 'value1', 'var2': 'value2'}),
-        equals(hostName + '/my-site/value1/value2/your-site/')
-      );
-      expect(
-        router.routeUrl(routeNameOneParameter, {'one_parameter': 'some_value'}),
-        equals(hostName + '/route/some_value/')
-      );
+    test('Route to path - one parameter', () {
+      //given
+      Router router = new Router("", {'one-param' : new Route('/{param}/')});
+
+      //when
+      var path = router.routePath("one-param", {"param" : "value"});
+
+      //then
+      expect(path, equals('/value/'));
     });
 
-    test('Router route with undefined route throws Error', () {
-      expect(
-        () => router.routePath('invalid-route', {}),
-        throwsArgumentError
-      );
+    test('Route to url', () {
+      //given
+      Router router = new Router("http://www.host.com", {'static' : new Route('/static/')});
+
+      //when
+      var url = router.routeUrl("static", {});
+
+      //then
+      expect(url, equals('http://www.host.com/static/'));
     });
 
-    test('Route matching', () {
-      var matchStatic = router.match(pathStatic);
-      var matchOneParameter = router.match('/route/some_value/');
-      var matchTwoVariables = router.match('/my-site/value1/value2/your-site/');
+    test('Path matching - static', () {
+      //given
+      Router router = new Router("", {'static' : new Route('/static/')});
 
-      expect(
-          matchStatic[0],
-          equals(routeNameStatic)
-      );
-      expect(
-          matchStatic[1],
-          equals({})
-      );
+      //when
+      var match = router.match("/static/");
 
-      expect(
-          matchOneParameter[0],
-          equals(routeNameOneParameter)
-      );
-      expect(
-          matchOneParameter[1],
-          equals({'one_parameter': 'some_value'})
-      );
-
-      expect(
-          matchTwoVariables[0],
-          equals(routeNameTwoVariables)
-      );
-      expect(
-          matchTwoVariables[1],
-          equals({'var1': 'value1', 'var2': 'value2'})
-      );
+      //then
+      expect(match[0], equals("static"));
+      expect(match[1], equals({}));
     });
 
-    test('Route matching undefined route throws Error', () {
-      expect(
-          () => router.match('/invalid-route'),
-          throwsArgumentError
-      );
+    test('Path matching - one parameter', () {
+      //given
+      Router router = new Router("", {'one-param' : new Route('/{param}/')});
+
+      //when
+      var match = router.match("/value/");
+
+      //then
+      expect(match[0], equals("one-param"));
+      expect(match[1], equals({"param":"value"}));
+    });
+
+    test('Path matching - undefined', () {
+      //given
+      Router router = new Router("", {'static' : new Route('/static/')});
+
+      //when & then
+      expect(() => router.match("/something-different/"), throwsArgumentError);
     });
   });
 
@@ -217,7 +225,6 @@ void main() {
  * Page navigator is tested as simulating simple client actions chronologically.
  */
   group('PageNavigator', () {
-
 
     //when & test
     test('PageNavigator should be initialized with no active route', () {
@@ -339,7 +346,7 @@ void main() {
 
     test('PageNavigator update url when Data updated', () {
       //==given
-      var route = new Route("/dummy/{param}");
+      var route = new Route("/dummy/{param}/");
       var paramsOld = {'param': 'pipkos'};
       var paramsNew = {'param': 'fajne'};
 
@@ -360,7 +367,7 @@ void main() {
 
         //only view.load was called at navigator.navigate
         view.getLogs(callsTo('load')).verify(happenedOnce);
-        view.getLogs(callsTo('unload')).verify(happenedExactly(0));
+        view.getLogs(callsTo('unload')).verify(neverHappened);
       });
 
       //listening to replace state confirms calling replace state
@@ -369,7 +376,7 @@ void main() {
 
     test('PageNavigator navigate to same view with different params', () {
       //==given
-      var route = new Route("/dummy/{param}");
+      var route = new Route("/dummy/{param}/");
       var paramsOld = {'param': 'bozi_pan'};
       var paramsNew = {'param': 'mega_motac'};
       var pathNew = route.path(paramsNew);
@@ -400,7 +407,7 @@ void main() {
       expect(view._real.data.values.first, equals(paramsNew.values.first));
       //no more load/unload for view
       view.getLogs(callsTo("load")).verify(happenedExactly(1));
-      view.getLogs(callsTo("unload")).verify(happenedExactly(0));
+      view.getLogs(callsTo("unload")).verify(neverHappened);
     });
   });
 }

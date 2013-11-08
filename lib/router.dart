@@ -47,11 +47,14 @@ class Route {
    * character being a letter.
    */
   Route(pattern) {
-    if (pattern[0] != '/') {
+    if (pattern.isEmpty || pattern[0] != '/') {
       throw new FormatException("Url pattern has to begin with '/' character.");
     }
+    if (pattern[pattern.length - 1] != '/') {
+      throw new FormatException("Url pattern has to end with '/' character.");
+    }
 
-    RegExp exp = new RegExp(r"^(?:([\w-]*)|{([a-zA-Z][\w]*)})$");
+    RegExp exp = new RegExp(r"^(?:([\w-]*)|{([^{}]*)})$");
     var matcherParts = new List();
     var parts = pattern.split('/');
     for (var part in parts) {
@@ -110,7 +113,7 @@ class Route {
       if (part['isVariable']) {
         value = variables[value];
         if (value == null) {
-          throw new FormatException("Missing value for ${part['value']}.");
+          throw new ArgumentError("Missing value for ${part['value']}.");
         }
       }
       parts.add(Uri.encodeComponent(value));
