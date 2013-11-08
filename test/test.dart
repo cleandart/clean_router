@@ -33,88 +33,110 @@ class SpyView extends Mock implements View {
 
 void main() {
   group('Route', () {
-    //given
-    final routeStatic = new Route("/just/static/one");
-    final routeOneParameter = new Route("/route/{one_parameter}/");
-    final routeTwoVariables = new Route("/my-site/{var1}/{var2}/your-site/");
-
-    //when & test
     test('Unsupported route format', () {
-      expect(
-        () => new Route("not-starting-with-backslash"),
-        throwsFormatException
-      );
-      //TODO what should be the behaviour?
-      /*
-      expect(
-        () => new Route("/not-ending-with-backslash"),
-        throwsFormatException
-      );*/
-      expect(
-        () => new Route("/#some-chars-not-allowed"),
-        throwsFormatException
-      );
-      expect(
-        () => new Route("/some-chars/{not-allowed}/in/variable/"),
-        throwsFormatException
-      );
-      expect(
-        () => new Route("/variable-must-begin-with/{_alpha}/"),
-        throwsFormatException
-      );
+      expect(() => new Route(""), throwsFormatException);
+      expect(() => new Route("not-starting-with-slash/"),throwsFormatException);
+      expect(() => new Route("/not-ending-with-slash"),  throwsFormatException);
+      expect(() => new Route("/#some-chars-not-allowed"),throwsFormatException);
+      expect(() => new Route("/?some-chars-not-allowed"),throwsFormatException);
+      expect(() => new Route("/!some-chars-not-allowed"),throwsFormatException);
+      expect(() => new Route("/.some-chars-not-allowed"),throwsFormatException);
+      expect(() => new Route("/{not_closed/"),           throwsFormatException);
+      expect(() => new Route("/not_open}/"),             throwsFormatException);
+      expect(() => new Route("/{{more-brackets}/"),      throwsFormatException);
+      expect(() => new Route("/{more-brackets}}/"),      throwsFormatException);
     });
 
-    test('Basic route matching', () {
-      expect(
-          routeTwoVariables.match("/my-site/"),
-          isNull
-      );
-      expect(
-        routeTwoVariables.match("/my-site/432/123/your-site/"),
-        equals({'var1': '432', 'var2': '123'})
-      );
-      expect(
-        routeTwoVariables.match("/my_site/123/321/your-site/"),
-        isNull
-      );
+    test('Supported route format', () {
+      expect(new Route("/"), isNot(isException));
+      expect(new Route("//"), isNot(isException));
+      expect(new Route("////////////////////////"), isNot(isException));
+      expect(new Route("/{anything-here4!@#\$%^&*()\\\n}/"), isNot(isException));
     });
 
-    test('Map returned from route matching is Map', () {
-      expect(
-        routeTwoVariables.match('/my-site/432/123/your-site/'),
-        new isInstanceOf<Map>()
-      );
+    test('Route matching - static not match', () {
+      // given
+      var route = new Route("/route/");
+
+      // when
+      var match = route.match("/other/");
+
+      // then
+      expect(match, isNull);
     });
 
-    test('Basic route generation', () {
-      expect(
-          routeTwoVariables.path({'var1': 'Hodnota', 'var2': 'Zloba'}),
-          equals('/my-site/Hodnota/Zloba/your-site/')
-      );
-      expect(
-          () => routeTwoVariables.path({'var1': 'Value'}),
-          throwsFormatException
-      );
+    test('Route matching - static match', () {
+      // given
+      var route = new Route("/route/");
+
+      // when
+      var match = route.match("/route/");
+
+      // then
+      expect(match, equals({}));
     });
 
-    test('Url escape variable values', () {
-      var params1 = {'var1': 'hello/dolly', 'var2': 'Ok'};
-      var params2 = {'var1': 'hello darling', 'var2': 'Here/we/are'};
+    test('Route matching - one parameter match', () {
+      // given
+      var route = new Route("/route/{param}/");
 
-      expect(
-        routeTwoVariables.match(routeTwoVariables.path(params1)),
-        equals(params1)
-      );
-      expect(
-        routeTwoVariables.match(routeTwoVariables.path(params2)),
-        equals(params2)
-      );
+      // when
+      var match = route.match("/route/value/");
+
+      // then
+      expect(match, equals({"param" : "value"}));
+    });
+
+    test('Route matching - several parameter match', () {
+      // given
+      var route = new Route("/route/{param1}/name/{param2}/{param3}/");
+
+      // when
+      var match = route.match("/route/value1/name/value2/value3/");
+
+      // then
+      expect(match, equals({
+        "param1" : "value1",
+        "param2" : "value2",
+        "param3" : "value3",
+      }));
+    });
+
+    test('Route generation - two params', () {
+      // given
+      var route = new Route("/route/{param1}/{param2}/");
+
+      // when
+      var path = route.path({'param1': 'value1', 'param2': 'value2'});
+
+      // then
+      expect(path, equals('/route/value1/value2/'));
+    });
+
+    test('Route generation - not enough params', () {
+      // given
+      var route = new Route("/route/{param1}/{param2}/");
+
+      // when & then
+      expect(() => route.path({'param1': 'value1'}), throwsArgumentError);
+    });
+
+    test('Route escape variable values for url', () {
+      // given
+      var route = new Route("/route/{param1}/");
+      var params = {'param1': '/\\!@#\$%^&*(){}|"\':;/.,-=?<>'};
+
+      // when
+      var params_there_and_back = route.match(route.path(params));
+
+      // then
+      expect(params, equals(params_there_and_back));
     });
   });
 
   group('Router', () {
     //given
-    final pathStatic = "/just/static/one";
+    final pathStatic = "/just/static/one/";
     final patternOneParameter = "/route/{one_parameter}/";
     final patternTwoVariables = "/my-site/{var1}/{var2}/your-site/";
 
@@ -301,7 +323,7 @@ void main() {
 
     test('PageNavigator update url when Data updated', () {
       //==given
-      var route = new Route("/dummy/{param}");
+      var route = new Route("/dummy/{param}/");
       var paramsOld = {'param': 'pipkos'};
       var paramsNew = {'param': 'fajne'};
 
@@ -322,7 +344,7 @@ void main() {
 
         //only view.load was called at navigator.navigate
         view.getLogs(callsTo('load')).verify(happenedOnce);
-        view.getLogs(callsTo('unload')).verify(happenedExactly(0));
+        view.getLogs(callsTo('unload')).verify(neverHappened);
       });
 
       //listening to replace state confirms calling replace state
@@ -331,7 +353,7 @@ void main() {
 
     test('PageNavigator navigate to same view with different params', () {
       //==given
-      var route = new Route("/dummy/{param}");
+      var route = new Route("/dummy/{param}/");
       var paramsOld = {'param': 'bozi_pan'};
       var paramsNew = {'param': 'mega_motac'};
       var pathNew = route.path(paramsNew);
@@ -362,7 +384,7 @@ void main() {
       expect(view._real.data.values.first, equals(paramsNew.values.first));
       //no more load/unload for view
       view.getLogs(callsTo("load")).verify(happenedExactly(1));
-      view.getLogs(callsTo("unload")).verify(happenedExactly(0));
+      view.getLogs(callsTo("unload")).verify(neverHappened);
     });
   });
 }
