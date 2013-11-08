@@ -54,7 +54,7 @@ void main() {
       expect(new Route("/{anything-here4!@#\$%^&*()\\\n}/"), isNot(isException));
     });
 
-    test('Route matching - static not match', () {
+    test('Matching - static not match', () {
       // given
       var route = new Route("/route/");
 
@@ -65,7 +65,7 @@ void main() {
       expect(match, isNull);
     });
 
-    test('Route matching - static match', () {
+    test('Matching - static match', () {
       // given
       var route = new Route("/route/");
 
@@ -76,7 +76,7 @@ void main() {
       expect(match, equals({}));
     });
 
-    test('Route matching - one parameter match', () {
+    test('Matching - one parameter match', () {
       // given
       var route = new Route("/route/{param}/");
 
@@ -87,7 +87,7 @@ void main() {
       expect(match, equals({"param" : "value"}));
     });
 
-    test('Route matching - several parameter match', () {
+    test('Matching - several parameter match', () {
       // given
       var route = new Route("/route/{param1}/name/{param2}/{param3}/");
 
@@ -102,7 +102,7 @@ void main() {
       }));
     });
 
-    test('Route generation - two params', () {
+    test('Generation - two params', () {
       // given
       var route = new Route("/route/{param1}/{param2}/");
 
@@ -113,7 +113,7 @@ void main() {
       expect(path, equals('/route/value1/value2/'));
     });
 
-    test('Route generation - not enough params', () {
+    test('Generation - not enough params', () {
       // given
       var route = new Route("/route/{param1}/{param2}/");
 
@@ -121,7 +121,8 @@ void main() {
       expect(() => route.path({'param1': 'value1'}), throwsArgumentError);
     });
 
-    test('Route escape variable values for url', () {
+    //TODO test escaped url valid for browser
+    test('Escape variable values for url', () {
       // given
       var route = new Route("/route/{param1}/");
       var params = {'param1': '/\\!@#\$%^&*(){}|"\':;/.,-=?<>'};
@@ -135,103 +136,77 @@ void main() {
   });
 
   group('Router', () {
-    //given
-    final pathStatic = "/just/static/one/";
-    final patternOneParameter = "/route/{one_parameter}/";
-    final patternTwoVariables = "/my-site/{var1}/{var2}/your-site/";
+    test('Route to path - static', () {
+      //given
+      Router router = new Router("", {'static' : new Route('/static/')});
 
-    final routeStatic = new Route(pathStatic);
-    final routeOneParameter = new Route(patternOneParameter);
-    final routeTwoVariables = new Route(patternTwoVariables);
+      //when
+      var path = router.routePath("static", {});
 
-    final routeNameStatic = "static";
-    final routeNameOneParameter = "one_parameter";
-    final routeNameTwoVariables = "two_variables";
-
-    final hostName = 'http://www.google.com';
-
-    var router = new Router(hostName, {
-      routeNameStatic: routeStatic,
-      routeNameOneParameter: routeOneParameter,
-      routeNameTwoVariables: routeTwoVariables
+      //then
+      expect(path, equals('/static/'));
     });
 
-    //when & test
-    test('Router route to path', () {
-      expect(
-        router.routePath(routeNameStatic, {}),
-        equals(pathStatic)
-      );
-      expect(
-        router.routePath(routeNameTwoVariables, {'var1': 'value1', 'var2': 'value2'}),
-        equals('/my-site/value1/value2/your-site/')
-      );
-      expect(
-        router.routePath(routeNameOneParameter, {'one_parameter': 'some_value'}),
-        equals('/route/some_value/')
-      );
+    test('Route to path - not existing', () {
+      //given
+      Router router = new Router("", {'static' : new Route('/static/')});
+
+      //when & then
+      expect(() => router.routePath("not-existing", {}), throwsArgumentError);
     });
 
-    test('Router route to url', () {
-      expect(
-        router.routeUrl(routeNameStatic, {}),
-        equals(hostName + pathStatic)
-      );
-      expect(
-        router.routeUrl(routeNameTwoVariables, {'var1': 'value1', 'var2': 'value2'}),
-        equals(hostName + '/my-site/value1/value2/your-site/')
-      );
-      expect(
-        router.routeUrl(routeNameOneParameter, {'one_parameter': 'some_value'}),
-        equals(hostName + '/route/some_value/')
-      );
+    test('Route to path - one parameter', () {
+      //given
+      Router router = new Router("", {'one-param' : new Route('/{param}/')});
+
+      //when
+      var path = router.routePath("one-param", {"param" : "value"});
+
+      //then
+      expect(path, equals('/value/'));
     });
 
-    test('Router route with undefined route throws Error', () {
-      expect(
-        () => router.routePath('invalid-route', {}),
-        throwsArgumentError
-      );
+    test('Route to url', () {
+      //given
+      Router router = new Router("http://www.host.com", {'static' : new Route('/static/')});
+
+      //when
+      var url = router.routeUrl("static", {});
+
+      //then
+      expect(url, equals('http://www.host.com/static/'));
     });
 
-    test('Route matching', () {
-      var matchStatic = router.match(pathStatic);
-      var matchOneParameter = router.match('/route/some_value/');
-      var matchTwoVariables = router.match('/my-site/value1/value2/your-site/');
+    test('Path matching - static', () {
+      //given
+      Router router = new Router("", {'static' : new Route('/static/')});
 
-      expect(
-          matchStatic[0],
-          equals(routeNameStatic)
-      );
-      expect(
-          matchStatic[1],
-          equals({})
-      );
+      //when
+      var match = router.match("/static/");
 
-      expect(
-          matchOneParameter[0],
-          equals(routeNameOneParameter)
-      );
-      expect(
-          matchOneParameter[1],
-          equals({'one_parameter': 'some_value'})
-      );
-
-      expect(
-          matchTwoVariables[0],
-          equals(routeNameTwoVariables)
-      );
-      expect(
-          matchTwoVariables[1],
-          equals({'var1': 'value1', 'var2': 'value2'})
-      );
+      //then
+      expect(match[0], equals("static"));
+      expect(match[1], equals({}));
     });
 
-    test('Route matching undefined route throws Error', () {
-      expect(
-          () => router.match('/invalid-route'),
-          throwsArgumentError
-      );
+    test('Path matching - one parameter', () {
+      //given
+      Router router = new Router("", {'one-param' : new Route('/{param}/')});
+
+      //when
+      var match = router.match("/value/");
+
+      //then
+      expect(match[0], equals("one-param"));
+      expect(match[1], equals({"param":"value"}));
+    });
+
+    test('Path matching - undefined', () {
+      //given
+      Router router = new Router("", {'static' : new Route('/static/')});
+
+      //when & then
+      expect(() => router.match("/something-different/"), throwsArgumentError);
     });
   });
 
@@ -239,7 +214,6 @@ void main() {
  * Page navigator is tested as simulating simple client actions chronologically.
  */
   group('PageNavigator', () {
-
 
     //when & test
     test('PageNavigator should be initialized with no active route', () {
