@@ -286,6 +286,23 @@ void main() {
       expect(view.getLogs().first.args.first.containsKey('arg'),isTrue);
     });
     
+    test('PageNavigator navigate to non existing path.', () {
+      // given
+      var router = new Router(null,{});
+      var view = new MockView();
+
+      var pageNavigator = new PageNavigator(router, new Mock());
+      pageNavigator.registerDefaultView(view);
+
+      // when
+      pageNavigator.navigateToPath("/dummy/url/");
+
+      // then
+      expect(pageNavigator.activePath, equals(null));
+
+      view.getLogs(callsTo('load')).verify(happenedOnce);
+    });
+    
     test('PageNavigator push state', () {
       //given
       var router = new MockRouter();

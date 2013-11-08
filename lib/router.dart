@@ -174,6 +174,7 @@ class PageNavigator {
   String _activeRouteName;
   Data _activeParameters;
   final Map _views = {};
+  View _defaultView;
 
   String get activePath => _activeRouteName == null ? null :_router.routePath(_activeRouteName, _activeParameters);
 
@@ -191,6 +192,13 @@ class PageNavigator {
       throw new ArgumentError("Route name '$routeName' already in use in PageNavigator.");
     }
     _views[routeName] = view;
+  }
+  
+/**
+ * Registers a [View] which is called when router does not find any match.  
+ */
+  void registerDefaultView(View view){
+    this._defaultView = view;
   }
 
 /**
@@ -242,13 +250,18 @@ class PageNavigator {
       _activeParameters.addAll(parameters);
     }
   }
+  
 /**
  *  Navigates the browser to the selected Path using [navigate] function.
- * 
  */
   void navigateToPath(String Path, {bool pushState: false}){
-    var routeInfo = _router.match(Path);
-    navigate(routeInfo[0], routeInfo[1], pushState: pushState);
+    try {
+      var routeInfo = _router.match(Path);
+      navigate(routeInfo[0], routeInfo[1], pushState: pushState);
+    } on ArgumentError {
+      _handleViewTransition(_views[_activeRouteName], _defaultView, {});
+      _activeRouteName = null;
+    }
   }
   
   void _updateHistoryState() {
