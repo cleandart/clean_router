@@ -121,8 +121,19 @@ void main() {
       expect(() => route.path({'param1': 'value1'}), throwsArgumentError);
     });
 
-    //TODO test escaped url valid for browser
-    test('Escape variable values for url', () {
+    test('Escape variable values', () {
+      // given
+      var route = new Route("/route/{param}/");
+      var params = {'param': '/\\!@#\$%^&*(){}|"\':;/.,-=?<>'};
+
+      // when
+      var path = route.path(params);
+
+      // then
+      expect(path, equals("/route/${Uri.encodeComponent(params['param'])}/"));
+    });
+
+    test('Parse esacaped variable values from url', () {
       // given
       var route = new Route("/route/{param1}/");
       var params = {'param1': '/\\!@#\$%^&*(){}|"\':;/.,-=?<>'};
