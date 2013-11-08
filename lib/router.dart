@@ -211,10 +211,21 @@ class PageNavigator {
       throw new ArgumentError("View not found for '$routeName'");
     }
 
-    var oldView = _views[_activeRouteName];
-    var newView = _views[routeName];
+    _handleViewTransition(_views[_activeRouteName],
+                          _views[routeName], parameters);
+    
+    _activeRouteName = routeName;
 
-    //== update activeParameters and views
+    //== update history
+    if (pushState){
+      this.pushState();
+    }
+    else {
+      _updateHistoryState();
+    }
+  }
+  
+  _handleViewTransition(View oldView, View newView, Map parameters){
     if (oldView != newView){
       if (oldView != null){
         oldView.unload();
@@ -229,16 +240,6 @@ class PageNavigator {
       //TODO add Data.update(Map), existing update, non-existing create other delete
       _activeParameters.removeAll(_activeParameters.keys.toList());
       _activeParameters.addAll(parameters);
-    }
-
-    _activeRouteName = routeName;
-
-    //== update history
-    if (pushState){
-      this.pushState();
-    }
-    else {
-      _updateHistoryState();
     }
   }
 /**
