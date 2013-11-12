@@ -33,7 +33,7 @@ class HttpResponseMock extends Mock implements HttpResponse {
 
 
 void main() {
-  test ('handler callback called', (){
+  test ('distinguish between GET and POST', (){
     //given
     var controller = new StreamController<HttpRequest>();
     var req = new HttpRequestMock(Uri.parse('/dummy/url/'),method:'GET');
@@ -43,6 +43,22 @@ void main() {
 
     var navigator = new RequestNavigator(controller.stream, router);;
     navigator.registerHandler('route_name', 'GET', expectAsync1((req) {}, count:1));
+    navigator.registerHandler('route_name', 'POST', expectAsync1((req) {}, count:0));
+
+    //when
+    controller.add(req);
+  });
+
+
+  test ('default handler', (){
+    //given
+    var controller = new StreamController<HttpRequest>();
+    var req = new HttpRequestMock(Uri.parse('/dummy/url/'),method:'GET');
+
+    var router = new MockRouter();
+
+    var navigator = new RequestNavigator(controller.stream, router);;
+    navigator.registerDefaultHandler(expectAsync1((req) {}, count:1));
 
     //when
     controller.add(req);

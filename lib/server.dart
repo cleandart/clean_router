@@ -2,6 +2,7 @@
 // code is governed by a BSD-style license that can be found in the LICENSE
 // file.
 
+//TODO Should we match HttpRequest with not set method?
 //TODO How we should handle uri parameters?
 //TODO   (sub of previous) should handler be an abstract class / interface?
 //TODO Futures
@@ -104,15 +105,16 @@ class RequestNavigator {
   Stream<HttpRequest> navigate(HttpRequest req){
     var routeInfo = _router.match(req.uri.path);
     if(routeInfo != null){
-      return _navigateToRoute(req, routeInfo[0], routeInfo[1]);
+      return _navigateToServerRoute(req, new _ServerRoute(routeInfo[0], req.method)
+        , routeInfo[1]);
     }
     else{
-      return _navigateToRoute(req, 'default', {});
+      return _navigateToServerRoute(req, _defaultServerRouteId, {});
     }
   }
 
-  Stream<HttpRequest> _navigateToRoute(HttpRequest req, String routeName, Map params){
-    var serverRoute = new _ServerRoute(routeName, req.method);
+  Stream<HttpRequest> _navigateToServerRoute(HttpRequest req,
+      _ServerRoute serverRoute, Map params){
 
     if(!_streams.containsKey(serverRoute)){
       throw new ArgumentError("Stream not found for '$serverRoute'");
