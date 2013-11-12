@@ -4,6 +4,7 @@
 
 library vacuum.router;
 import "dart:core";
+import "dart:async";
 import 'package:clean_data/clean_data.dart';
 
 /**
@@ -175,6 +176,7 @@ class PageNavigator {
   final dynamic _history;
   String _activeRouteName;
   Data _activeParameters;
+  StreamSubscription _dataSubscription;
   final Map _views = {};
   
   String _activePath = null;
@@ -224,8 +226,14 @@ class PageNavigator {
       throw new ArgumentError("View not found for '$routeName'");
     }
 
-    _handleViewTransition(_views[_activeRouteName],
-                          _views[routeName], parameters);
+    if (_views[_activeRouteName] != _views[routeName]) {
+      _setActiveParameters(parameters);
+      _handleViewTransition(_views[_activeRouteName], _views[routeName]);
+    } 
+    else {
+      _activeParameters.removeAll(_activeParameters.keys.toList());
+      _activeParameters.addAll(parameters);
+    }
     
     _activeRouteName = routeName;
 
@@ -238,20 +246,21 @@ class PageNavigator {
     }
   }
   
-  _handleViewTransition(View oldView, View newView, Map parameters) {
-    if (oldView != newView) {
-      if (oldView != null) {
-        oldView.unload();
-      }
-      var data = new Data.fromMap(parameters);
-      newView.load(data);
-      _activeParameters = data;
-      _activeParameters.onChange.listen((ChangeSet change) => _updateHistoryState());
+  void _handleViewTransition(View oldView, View newView) {
+    if (oldView != null) {
+      oldView.unload();
     }
-    else {
-      _activeParameters.removeAll(_activeParameters.keys.toList());
-      _activeParameters.addAll(parameters);
+    newView.load(_activeParameters);
+  }
+  
+  void _setActiveParameters(Map parameters) {
+    if(_dataSubscription != null) {
+      _dataSubscription.cancel();
     }
+    var data = new Data.fromMap(parameters);
+    _activeParameters = data;
+    _dataSubscription = _activeParameters.onChange.listen(
+        (ChangeSet change) => _updateHistoryState());
   }
   
 /**
@@ -263,7 +272,8 @@ class PageNavigator {
       navigate(routeInfo[0], routeInfo[1], pushState: pushState);
     }
     else {
-      _handleViewTransition(_views[_activeRouteName], _views['default'], {});
+      _setActiveParameters({});
+      _handleViewTransition(_views[_activeRouteName], _views['default']);
       _activeRouteName = null;
       _activePath = path;
     }
