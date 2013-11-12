@@ -257,15 +257,15 @@ class PageNavigator {
 /**
  *  Navigates the browser to the selected Path using [navigate] function.
  */
-  void navigateToPath(String Path, {bool pushState: false}) {
-    var routeInfo = _router.match(Path);
+  void navigateToPath(String path, {bool pushState: false}) {
+    var routeInfo = _router.match(path);
     if(routeInfo != null) {
       navigate(routeInfo[0], routeInfo[1], pushState: pushState);
     }
     else {
       _handleViewTransition(_views[_activeRouteName], _views['default'], {});
       _activeRouteName = null;
-      _activePath = Path;
+      _activePath = path;
     }
   }
   

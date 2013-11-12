@@ -33,7 +33,7 @@ class SpyView extends Mock implements View {
 
 void main() {
   group('Route', () {
-    test('Unsupported route format', () {
+    test('unsupported format', () {
       expect(() => new Route(""), throwsFormatException);
       expect(() => new Route("not-starting-with-slash/"),throwsFormatException);
       expect(() => new Route("/not-ending-with-slash"),  throwsFormatException);
@@ -47,14 +47,14 @@ void main() {
       expect(() => new Route("/{more-brackets}}/"),      throwsFormatException);
     });
 
-    test('Supported route format', () {
+    test('supported format', () {
       expect(new Route("/"), isNot(isException));
       expect(new Route("//"), isNot(isException));
       expect(new Route("////////////////////////"), isNot(isException));
       expect(new Route("/{anything-here4!@#\$%^&*()\\\n}/"), isNot(isException));
     });
 
-    test('Matching - static not match', () {
+    test('matching - static not match', () {
       // given
       var route = new Route("/route/");
 
@@ -65,7 +65,7 @@ void main() {
       expect(match, isNull);
     });
 
-    test('Matching - static match', () {
+    test('matching - static match', () {
       // given
       var route = new Route("/route/");
 
@@ -76,7 +76,7 @@ void main() {
       expect(match, equals({}));
     });
 
-    test('Matching - one parameter match', () {
+    test('matching - one parameter match', () {
       // given
       var route = new Route("/route/{param}/");
 
@@ -87,7 +87,7 @@ void main() {
       expect(match, equals({"param" : "value"}));
     });
 
-    test('Matching - several parameter match', () {
+    test('matching - several parameter match', () {
       // given
       var route = new Route("/route/{param1}/name/{param2}/{param3}/");
 
@@ -102,7 +102,7 @@ void main() {
       }));
     });
 
-    test('Generation - two params', () {
+    test('generation - two params', () {
       // given
       var route = new Route("/route/{param1}/{param2}/");
 
@@ -113,7 +113,7 @@ void main() {
       expect(path, equals('/route/value1/value2/'));
     });
 
-    test('Generation - not enough params', () {
+    test('generation - not enough params', () {
       // given
       var route = new Route("/route/{param1}/{param2}/");
 
@@ -121,7 +121,7 @@ void main() {
       expect(() => route.path({'param1': 'value1'}), throwsArgumentError);
     });
 
-    test('Escape variable values', () {
+    test('escape variable values', () {
       // given
       var route = new Route("/route/{param}/");
       var params = {'param': '/\\!@#\$%^&*(){}|"\':;/.,-=?<>'};
@@ -133,7 +133,7 @@ void main() {
       expect(path, equals("/route/${Uri.encodeComponent(params['param'])}/"));
     });
 
-    test('Parse esacaped variable values from url', () {
+    test('parse escaped variable values from url', () {
       // given
       var route = new Route("/route/{param1}/");
       var params = {'param1': '/\\!@#\$%^&*(){}|"\':;/.,-=?<>'};
@@ -147,7 +147,7 @@ void main() {
   });
 
   group('Router', () {
-    test('Route to path - static', () {
+    test('to path - static', () {
       //given
       Router router = new Router("", {'static' : new Route('/static/')});
 
@@ -158,7 +158,7 @@ void main() {
       expect(path, equals('/static/'));
     });
 
-    test('Route to path - not existing', () {
+    test('to path - not existing', () {
       //given
       Router router = new Router("", {'static' : new Route('/static/')});
 
@@ -166,7 +166,7 @@ void main() {
       expect(() => router.routePath("not-existing", {}), throwsArgumentError);
     });
 
-    test('Route to path - one parameter', () {
+    test('to path - one parameter', () {
       //given
       Router router = new Router("", {'one-param' : new Route('/{param}/')});
 
@@ -177,7 +177,7 @@ void main() {
       expect(path, equals('/value/'));
     });
 
-    test('Route to url', () {
+    test('to url', () {
       //given
       Router router = new Router("http://www.host.com", {'static' : new Route('/static/')});
 
@@ -188,7 +188,7 @@ void main() {
       expect(url, equals('http://www.host.com/static/'));
     });
 
-    test('Path matching - static', () {
+    test('path matching - static', () {
       //given
       Router router = new Router("", {'static' : new Route('/static/')});
 
@@ -200,7 +200,7 @@ void main() {
       expect(match[1], equals({}));
     });
 
-    test('Path matching - one parameter', () {
+    test('path matching - one parameter', () {
       //given
       Router router = new Router("", {'one-param' : new Route('/{param}/')});
 
@@ -212,7 +212,7 @@ void main() {
       expect(match[1], equals({"param":"value"}));
     });
 
-    test('Path matching - undefined', () {
+    test('path matching - undefined', () {
       //given
       Router router = new Router("", {'static' : new Route('/static/')});
 
@@ -231,14 +231,14 @@ void main() {
       // given
 
       // when
-      var pageNavigator = new PageNavigator(new MockRouter(), new Mock());
+      var pageNavigator = new PageNavigator(new MockRouter(), null);
 
       // then
       expect(pageNavigator.activePath, isNull);
     });
 
     test('navigate to non existing site', () {
-      var pageNavigator = new PageNavigator(new MockRouter(), new MockView());
+      var pageNavigator = new PageNavigator(null, null);
       expect(
           () => pageNavigator.navigate("non-existing-site", {}),
           throwsArgumentError
@@ -341,23 +341,8 @@ void main() {
       history.getLogs(callsTo('pushState')).verify(happenedOnce);
     });
 
-    test('navigate to one param page', () {
-      // given
-      var router = new MockRouter();
-      var view = new MockView();
-      router.when(callsTo('routePath')).alwaysReturn("/dummy/parameter_value/");
-      var pageNavigator = new PageNavigator(router, new Mock());
-      pageNavigator.registerView("one_param", view);
-
-      // when
-      pageNavigator.navigate("one_param", {"param":"parameter_value"});
-
-      // then
-      expect(pageNavigator.activePath, equals("/dummy/parameter_value/"));
-    });
-
     test('update url when Data updated', () {
-      //==given
+      //given
       var route = new Route("/dummy/{param}/");
       var paramsOld = {'param': 'pipkos'};
       var paramsNew = {'param': 'fajne'};
@@ -370,10 +355,10 @@ void main() {
       navigator.registerView("page", view);
       navigator.navigate("page", paramsOld);
 
-      //==when
+      //when
       view._real.data["param"] = 'fajne';
 
-      //==then
+      //then
       var checkReplaceCall = expectAsync0(() {
         expect(navigator.activePath, equals(route.path(paramsNew)));
 
@@ -387,7 +372,7 @@ void main() {
     });
 
     test('navigate to same view with different params', () {
-      //==given
+      //given
       var route = new Route("/dummy/{param}/");
       var paramsOld = {'param': 'bozi_pan'};
       var paramsNew = {'param': 'mega_motac'};
@@ -403,10 +388,10 @@ void main() {
 
       //assume set up is correct (tested previously)
 
-      //==when
+      //when
       navigator.navigate("page", paramsNew);
 
-      //==then (should propagate the change in data to view)
+      //then (should propagate the change in data to view)
       expect(navigator.activePath, equals(pathNew));
 
       //history state
