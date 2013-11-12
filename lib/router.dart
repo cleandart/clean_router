@@ -161,7 +161,7 @@ class Router {
         return [key, match];
       }
     }
-    throw new ArgumentError('No route matches url "$url".');
+    return null;
   }
 }
 
@@ -176,9 +176,10 @@ class PageNavigator {
   String _activeRouteName;
   Data _activeParameters;
   final Map _views = {};
-  View _defaultView;
-
-  String get activePath => _activeRouteName == null ? null :_router.routePath(_activeRouteName, _activeParameters);
+  
+  String _activePath = null;
+  String get activePath => _activeRouteName == null || _activeRouteName == 'default' 
+      ? _activePath : _router.routePath(_activeRouteName, _activeParameters);
 
 /**
  * Creates new [PageNavigator].
@@ -190,6 +191,9 @@ class PageNavigator {
  * It is not allowed to override already registered view.
  */
   void registerView(String routeName, View view) {
+    if(routeName == 'default') {
+      throw new ArgumentError("Route name should not be 'default'.");
+    }
     if(_views.containsKey(routeName)) {
       throw new ArgumentError("Route name '$routeName' already in use in PageNavigator.");
     }
@@ -200,7 +204,7 @@ class PageNavigator {
  * Registers a [View] which is called when router does not find any match.  
  */
   void registerDefaultView(View view) {
-    this._defaultView = view;
+    _views['default'] = view;
   }
 
 /**
@@ -215,8 +219,7 @@ class PageNavigator {
  */
   void navigate(String routeName, Map parameters, {bool pushState: false}) {
     //== prepare variables
-    var path = _router.routePath(routeName, parameters);
-
+    
     if(!_views.containsKey(routeName)) {
       throw new ArgumentError("View not found for '$routeName'");
     }
@@ -246,8 +249,6 @@ class PageNavigator {
       _activeParameters.onChange.listen((ChangeSet change) => _updateHistoryState());
     }
     else {
-      //TODO add Data.clear() to library
-      //TODO add Data.update(Map), existing update, non-existing create other delete
       _activeParameters.removeAll(_activeParameters.keys.toList());
       _activeParameters.addAll(parameters);
     }
@@ -257,12 +258,14 @@ class PageNavigator {
  *  Navigates the browser to the selected Path using [navigate] function.
  */
   void navigateToPath(String Path, {bool pushState: false}) {
-    try {
-      var routeInfo = _router.match(Path);
+    var routeInfo = _router.match(Path);
+    if(routeInfo != null) {
       navigate(routeInfo[0], routeInfo[1], pushState: pushState);
-    } on ArgumentError {
-      _handleViewTransition(_views[_activeRouteName], _defaultView, {});
+    }
+    else {
+      _handleViewTransition(_views[_activeRouteName], _views['default'], {});
       _activeRouteName = null;
+      _activePath = Path;
     }
   }
   
@@ -281,7 +284,6 @@ class PageNavigator {
   }
 }
 
-//TODO move to separate fle
 /**
  * Should have the closest approximation of [dart.dom.history] as possible for browsers not supporting [HTML5].
  * This is implemented via tokens after hashes in url which are allowed to change by browsers.

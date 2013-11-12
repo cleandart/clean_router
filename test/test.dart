@@ -217,7 +217,7 @@ void main() {
       Router router = new Router("", {'static' : new Route('/static/')});
 
       //when & then
-      expect(() => router.match("/something-different/"), throwsArgumentError);
+      expect(router.match("/something-different/"), isNull);
     });
   });
 
@@ -227,7 +227,7 @@ void main() {
   group('PageNavigator', () {
 
     //when & test
-    test('PageNavigator should be initialized with no active route', () {
+    test('should be initialized with no active route', () {
       // given
 
       // when
@@ -237,7 +237,7 @@ void main() {
       expect(pageNavigator.activePath, isNull);
     });
 
-    test('PageNavigator navigate to non existing site', () {
+    test('navigate to non existing site', () {
       var pageNavigator = new PageNavigator(new MockRouter(), new MockView());
       expect(
           () => pageNavigator.navigate("non-existing-site", {}),
@@ -246,7 +246,7 @@ void main() {
     });
 
     //transition from null to static page
-    test('PageNavigator navigate to static page', () {
+    test('navigate to static page', () {
       // given
       var router = new MockRouter();
       var view = new MockView();
@@ -264,7 +264,7 @@ void main() {
       router.getLogs(callsTo('routePath')).verify(happenedAtLeastOnce);
       var args = router.getLogs(callsTo('routePath')).first.args;
       expect(args[0], equals('static'));
-      expect(args[1], equals({}));
+      expect(args[1], new isInstanceOf<Data>());
 
       history.getLogs(callsTo('replaceState')).verify(happenedOnce);
 
@@ -272,7 +272,7 @@ void main() {
       expect(view.getLogs().first.args.first.isEmpty, isTrue);
     });
     
-    test('PageNavigator navigate to path.', () {
+    test('navigate to path.', () {
       // given
       var router = new MockRouter();
       var view = new MockView();
@@ -293,7 +293,19 @@ void main() {
       expect(view.getLogs().first.args.first.containsKey('arg'),isTrue);
     });
     
-    test('PageNavigator navigate to non existing path.', () {
+    test('register default view should be done with registerDefaultView', () {
+      // given
+      var pageNavigator = new PageNavigator(new MockRouter(), new Mock());
+      
+      //then
+      expect( 
+          () => pageNavigator.registerView("default", new MockView()),
+          throwsArgumentError
+      );         
+
+    });
+    
+    test('navigate to non existing path.', () {
       // given
       var router = new Router(null,{});
       var view = new MockView();
@@ -305,12 +317,12 @@ void main() {
       pageNavigator.navigateToPath("/dummy/url/");
 
       // then
-      expect(pageNavigator.activePath, equals(null));
+      expect(pageNavigator.activePath, equals("/dummy/url/"));
 
       view.getLogs(callsTo('load')).verify(happenedOnce);
     });
     
-    test('PageNavigator push state', () {
+    test('push state', () {
       //given
       var router = new MockRouter();
       var view = new MockView();
@@ -329,7 +341,7 @@ void main() {
       history.getLogs(callsTo('pushState')).verify(happenedOnce);
     });
 
-    test('PageNavigator navigate to one param page', () {
+    test('navigate to one param page', () {
       // given
       var router = new MockRouter();
       var view = new MockView();
@@ -344,7 +356,7 @@ void main() {
       expect(pageNavigator.activePath, equals("/dummy/parameter_value/"));
     });
 
-    test('PageNavigator update url when Data updated', () {
+    test('update url when Data updated', () {
       //==given
       var route = new Route("/dummy/{param}/");
       var paramsOld = {'param': 'pipkos'};
@@ -374,7 +386,7 @@ void main() {
       history.when(callsTo('replaceState')).alwaysCall((a, b, c) => checkReplaceCall());
     });
 
-    test('PageNavigator navigate to same view with different params', () {
+    test('navigate to same view with different params', () {
       //==given
       var route = new Route("/dummy/{param}/");
       var paramsOld = {'param': 'bozi_pan'};
