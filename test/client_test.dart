@@ -187,8 +187,8 @@ void main() {
     test('navigate to same view with different params', () {
       //given
       var route = new Route("/dummy/{param}/");
-      var paramsOld = {'param': 'bozi_pan'};
-      var paramsNew = {'param': 'mega_motac'};
+      var paramsOld = {'param': 'cute_kitty'};
+      var paramsNew = {'param': 'sad_kitty'};
       var pathNew = route.path(paramsNew);
 
       var view = new SpyView();
@@ -223,7 +223,7 @@ void main() {
     test('navigate to same view with different params', () {
       //given
       var view = new DummyView();
-      var params = {'param': 'bozi_pan'};
+      var params = {'param': 'happy_kitty'};
       var history = new Mock();
       var navigator = new PageNavigator(new MockRouter(), history);
 
@@ -242,7 +242,7 @@ void main() {
       var data = view.data;
       navigator.navigate('second',{});
 
-      data['param'] = 'bozi_sluha';
+      data['param'] = 'vacuumcleaner';
     });
 
   });
