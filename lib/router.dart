@@ -6,13 +6,12 @@ library vacuum.router;
 import "dart:core";
 import 'package:clean_data/clean_data.dart';
 
-//TODO consider moving to a separate file
 /**
  * [View] is responsible for manipulating data received from server to be used for HTML.
  * Methods of [View] are called when [PageNavigator] matches the corresponding route
  *   or when is navigated to different location.
  */
-abstract class View{
+abstract class View {
   /**
    * Called when [PageNavigator] decides a new [View] should be used/displayed.
    * [View] should listen do [data] changes.
@@ -94,7 +93,7 @@ class Route {
     // Decode [url] parameters and fill them into [Map].
     Map result = new Map();
     for (var i = 0; i < _variables.length; i++) {
-      result[_variables[i]] = Uri.decodeComponent(match.group(i+1));
+      result[_variables[i]] = Uri.decodeComponent(match.group(i + 1));
     }
 
     return result;
@@ -190,8 +189,8 @@ class PageNavigator {
  * Registeres a [view] for a particular [Route] identified by [route_name] in [Router].
  * It is not allowed to override already registered view.
  */
-  void registerView(String routeName, View view){
-    if(_views.containsKey(routeName)){
+  void registerView(String routeName, View view) {
+    if(_views.containsKey(routeName)) {
       throw new ArgumentError("Route name '$routeName' already in use in PageNavigator.");
     }
     _views[routeName] = view;
@@ -200,7 +199,7 @@ class PageNavigator {
 /**
  * Registers a [View] which is called when router does not find any match.  
  */
-  void registerDefaultView(View view){
+  void registerDefaultView(View view) {
     this._defaultView = view;
   }
 
@@ -214,11 +213,11 @@ class PageNavigator {
  *
  * Use flag [pushState] to push the new url to browser history.
  */
-  void navigate(String routeName, Map parameters, {bool pushState: false}){
+  void navigate(String routeName, Map parameters, {bool pushState: false}) {
     //== prepare variables
     var path = _router.routePath(routeName, parameters);
 
-    if(!_views.containsKey(routeName)){
+    if(!_views.containsKey(routeName)) {
       throw new ArgumentError("View not found for '$routeName'");
     }
 
@@ -228,7 +227,7 @@ class PageNavigator {
     _activeRouteName = routeName;
 
     //== update history
-    if (pushState){
+    if (pushState) {
       this.pushState();
     }
     else {
@@ -236,9 +235,9 @@ class PageNavigator {
     }
   }
   
-  _handleViewTransition(View oldView, View newView, Map parameters){
-    if (oldView != newView){
-      if (oldView != null){
+  _handleViewTransition(View oldView, View newView, Map parameters) {
+    if (oldView != newView) {
+      if (oldView != null) {
         oldView.unload();
       }
       var data = new Data.fromMap(parameters);
@@ -257,7 +256,7 @@ class PageNavigator {
 /**
  *  Navigates the browser to the selected Path using [navigate] function.
  */
-  void navigateToPath(String Path, {bool pushState: false}){
+  void navigateToPath(String Path, {bool pushState: false}) {
     try {
       var routeInfo = _router.match(Path);
       navigate(routeInfo[0], routeInfo[1], pushState: pushState);
@@ -293,14 +292,14 @@ class PageNavigator {
   /**
    * Navigates to url.
    */
-  void pushState(Object data, String title, [String url]){
+  void pushState(Object data, String title, [String url]) {
     window.location.hash = '#' + url;
   }
 
   /**
    * Navigates to url.
    */
-  void replaceState(Object data, String title, [String url]){
+  void replaceState(Object data, String title, [String url]) {
     window.location.hash = '#' + url;
   }
 }
