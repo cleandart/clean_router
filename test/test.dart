@@ -1,4 +1,4 @@
-// Copyright (c) 2013, Samuel Hapak, Peter Csiba. All rights reserved.
+// Copyright (c) 2013, Samuel Hapak, Peter Csiba, Jozef Brandys. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
 //TODO consider spliting into test file by classes tested
 
@@ -406,6 +406,32 @@ void main() {
       view.getLogs(callsTo("load")).verify(happenedExactly(1));
       view.getLogs(callsTo("unload")).verify(neverHappened);
     });
+    
+    test('navigate to same view with different params', () {
+      //given
+      var view = new DummyView();
+      var params = {'param': 'bozi_pan'};
+      var history = new Mock();
+      var navigator = new PageNavigator(new MockRouter(), history);
+      
+      var calls = 0;
+      var checkMaxTwo = () => guardAsync(() {
+        history.getLogs(callsTo('replaceState')).verify(happenedAtMost(2));
+      });
+      
+      history.when(callsTo('replaceState')).alwaysCall((a,b,[c]) => checkMaxTwo());
+      
+      //when 
+      navigator.registerView('first', view);
+      navigator.registerView('second',new MockView());
+      
+      navigator.navigate('first',params);
+      var data = view.data;
+      navigator.navigate('second',{});
+      
+      data['param'] = 'bozi_sluha';
+    });
+    
   });
 }
 
