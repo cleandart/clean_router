@@ -10,17 +10,22 @@ library vacuum.router;
 import "dart:core";
 import 'dart:io';
 import 'dart:async';
+import 'dart:collection';
 import 'router.dart';
 
-class _ServerRoute{
+class _ServerRoute implements Comparable{
   String routeName;
   String method;
 
   _ServerRoute(this.routeName, this.method);
 
-  String toString(){
-    return routeName + ":" + method;
-  }
+  int compareTo(_ServerRoute other) => (this.routeName != other.routeName) ?
+      this.routeName.compareTo(other.routeName) : this.method.compareTo(other.method);
+
+  bool operator ==(_ServerRoute other) => (this.routeName == other.routeName &&
+      this.method == other.method);
+
+  String toString() => routeName + ":" + method;
 }
 
 /**
@@ -30,7 +35,8 @@ class _ServerRoute{
 class RequestNavigator {
   final Stream<HttpRequest> _incoming;
   final Router _router;
-  final Map<_ServerRoute, StreamController<HttpRequest>> _streams = {};
+  final Map<_ServerRoute, StreamController<HttpRequest>> _streams
+      = new SplayTreeMap<_ServerRoute, StreamController<HttpRequest>>();
 
   /**
    * Contains [Route], [Filter], [Stream] triples where [Stream] has at least one handler.

@@ -5,8 +5,11 @@
 import 'package:unittest/unittest.dart';
 import 'package:unittest/mock.dart';
 import '../lib/server.dart';
+import '../lib/router.dart';
 import 'dart:async';
 import 'dart:io';
+
+class MockRouter extends Mock implements Router {}
 
 class HttpRequestMock extends Mock implements HttpRequest {
   Uri uri;
@@ -30,5 +33,18 @@ class HttpResponseMock extends Mock implements HttpResponse {
 
 
 void main() {
+  test ('handler callback called', (){
+    //given
+    var controller = new StreamController<HttpRequest>();
+    var req = new HttpRequestMock(Uri.parse('/dummy/url/'),method:'GET');
 
+    var router = new MockRouter();
+    router.when(callsTo('match')).alwaysReturn(['route_name', {}]);
+
+    var navigator = new RequestNavigator(controller.stream, router);;
+    navigator.registerHandler('route_name', 'GET', expectAsync1((req) {}, count:1));
+
+    //when
+    controller.add(req);
+  });
 }
