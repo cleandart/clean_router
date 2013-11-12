@@ -3,15 +3,25 @@
 // file.
 
 //TODO How we should handle uri parameters?
-//TODO HttpRequest.method (incorporate into route or solve with filters?)
+//TODO   (sub of previous) should handler be an abstract class / interface?
 //TODO Futures
-//TODO Should be handler a class?
 
 library vacuum.router;
 import "dart:core";
 import 'dart:io';
 import 'dart:async';
 import 'router.dart';
+
+class _ServerRoute{
+  String routeName;
+  String method;
+
+  _ServerRoute(this.routeName, this.method);
+
+  String toString(){
+    return routeName + ":" + method;
+  }
+}
 
 /**
  * [RequestNavigator] wires together [Route] matching, [Filter]ing of [HttpRequests]
@@ -20,12 +30,14 @@ import 'router.dart';
 class RequestNavigator {
   final Stream<HttpRequest> _incoming;
   final Router _router;
-  final Map<String, StreamController<HttpRequest>> _streams = {};
+  final Map<_ServerRoute, StreamController<HttpRequest>> _streams = {};
 
   /**
    * Contains [Route], [Filter], [Stream] triples where [Stream] has at least one handler.
    */
   final List _filters = [];
+
+  final _ServerRoute _defaultServerRouteId = new _ServerRoute('default', '');
 
   /**
    * Creates new RequestNavigator listening on [_incoming].
@@ -44,16 +56,18 @@ class RequestNavigator {
    * Registers [Handler] for a [Route] and adds listener to the stream which
    * is also returned.
    */
-  Stream<HttpRequest> registerHandler(String routeName, dynamic handler){
+  Stream<HttpRequest> registerHandler(String routeName, String method, dynamic handler){
     if(routeName == 'default') {
       throw new ArgumentError("Route name should not be 'default'.");
     }
-    if(_streams.containsKey(routeName)){
-      throw new ArgumentError("Route name '$routeName' already in use in RequestNavigator.");
+
+    var serverRoute = new _ServerRoute(routeName, method);
+    if(_streams.containsKey(serverRoute)){
+      throw new ArgumentError("Route name '$serverRoute' already in use in RequestNavigator.");
     }
 
-    _streams[routeName] = _createStreamControllerWithHandler(handler);
-    return _streams[routeName].stream;
+    _streams[serverRoute] = _createStreamControllerWithHandler(handler);
+    return _streams[serverRoute].stream;
   }
 
   /**
@@ -61,8 +75,8 @@ class RequestNavigator {
    */
   Stream<HttpRequest> registerDefaultHandler(dynamic handler){
     //TODO what should we do if overriding?
-    _streams['default'] = _createStreamControllerWithHandler(handler);
-    return _streams['default'].stream;
+    _streams[_defaultServerRouteId] = _createStreamControllerWithHandler(handler);
+    return _streams[_defaultServerRouteId].stream;
   }
 
   /**
@@ -92,11 +106,13 @@ class RequestNavigator {
   }
 
   Stream<HttpRequest> _navigateToRoute(HttpRequest req, String routeName, Map params){
-    if(!_streams.containsKey(routeName)){
-      throw new ArgumentError("Stream not found for '$routeName'");
+    var serverRoute = new _ServerRoute(routeName, req.method);
+
+    if(!_streams.containsKey(serverRoute)){
+      throw new ArgumentError("Stream not found for '$serverRoute'");
     }
 
-    var streamController = _streams[routeName];
+    var streamController = _streams[serverRoute];
     streamController.add(req);
     return streamController.stream;
   }
