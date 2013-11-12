@@ -220,7 +220,7 @@ void main() {
       view.getLogs(callsTo("unload")).verify(neverHappened);
     });
 
-    test('navigate to same view with different params', () {
+    test('checked unsuscribing data', () {
       //given
       var view = new DummyView();
       var params = {'param': 'happy_kitty'};
