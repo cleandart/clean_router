@@ -2,6 +2,8 @@
 // code is governed by a BSD-style license that can be found in the LICENSE
 // file.
 
+library vacuum.router;
+
 /**
  * Maps [Map] of variables to [String] Url component and vice versa.
  */
