@@ -4,8 +4,8 @@
 
 //TODO Should we match HttpRequest with not set method?
 //TODO How we should handle uri parameters?
-//TODO   (sub of previous) should handler be an abstract class / interface?
-//TODO Futures
+//TODO   should handler be an abstract class / interface?
+//TODO Filters
 
 library vacuum.router;
 import "dart:core";
