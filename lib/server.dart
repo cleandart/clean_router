@@ -12,7 +12,8 @@ import "dart:core";
 import 'dart:io';
 import 'dart:async';
 import 'dart:collection';
-import 'router.dart';
+import 'common.dart';
+export 'common.dart';
 
 class _ServerRoute implements Comparable{
   String routeName;
@@ -133,3 +134,4 @@ abstract class Filter{
    */
   bool filter(HttpRequest req);
 }
+

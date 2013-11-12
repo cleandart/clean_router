@@ -5,7 +5,6 @@
 import 'package:unittest/unittest.dart';
 import 'package:unittest/mock.dart';
 import '../lib/server.dart';
-import '../lib/router.dart';
 import 'dart:async';
 import 'dart:io';
 
