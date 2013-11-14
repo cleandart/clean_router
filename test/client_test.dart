@@ -5,7 +5,6 @@
 library client_test;
 
 import 'package:unittest/unittest.dart';
-import '../lib/common.dart';
 import '../lib/client.dart';
 import 'package:unittest/mock.dart';
 import 'package:clean_data/clean_data.dart';

@@ -7,6 +7,7 @@ import "dart:core";
 import "dart:async";
 import 'package:clean_data/clean_data.dart';
 import 'common.dart';
+export 'common.dart';
 
 /**
  * [View] is responsible for manipulating data received from server to be used for HTML.
