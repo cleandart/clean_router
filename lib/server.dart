@@ -12,23 +12,21 @@ library clean_router.server;
 import "dart:core";
 import 'dart:io';
 import 'dart:async';
-import 'dart:collection';
 import 'common.dart';
 export 'common.dart';
 
-class _ServerRoute implements Comparable{
+class _ServerRoute{
   final String routeName;
   final String method;
 
   _ServerRoute(this.routeName, this.method);
 
-  int compareTo(_ServerRoute other) => (this.routeName != other.routeName) ?
-      this.routeName.compareTo(other.routeName) : this.method.compareTo(other.method);
-
   bool operator ==(_ServerRoute other) => (this.routeName == other.routeName &&
       this.method == other.method);
 
   String toString() => routeName + ":" + method;
+
+  int get hashCode => toString.hashCode;
 }
 
 /**
@@ -38,8 +36,7 @@ class _ServerRoute implements Comparable{
 class RequestNavigator {
   final Stream<HttpRequest> _incoming;
   final Router _router;
-  final Map<_ServerRoute, StreamController<HttpRequest>> _streams
-      = new SplayTreeMap<_ServerRoute, StreamController<HttpRequest>>();
+  final Map<_ServerRoute, StreamController<HttpRequest>> _streams = {};
 
   /**
    * Contains [Route], [Filter], [Stream] triples where [Stream] has at least one handler.
