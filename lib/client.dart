@@ -121,7 +121,7 @@ class PageNavigator {
     if(_dataSubscription != null) {
       _dataSubscription.cancel();
     }
-    var data = new Data.fromMap(parameters);
+    var data = new Data.from(parameters);
     _activeParameters = data;
     _dataSubscription = _activeParameters.onChange.listen(
         (ChangeSet change) => _updateHistoryState());
