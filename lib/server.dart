@@ -46,7 +46,7 @@ class RequestNavigator {
 
   StreamController _createStreamControllerWithHandler(dynamic handler){
     var streamController = new StreamController<RequestHandlerParameters>();
-    streamController.stream.listen(handler);
+    streamController.stream.listen((p) => handler(p.req, p.url_params));
     return streamController;
   }
 

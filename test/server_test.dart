@@ -44,7 +44,7 @@ void main() {
       router.when(callsTo('match')).alwaysReturn(['route_name', {}]);
 
       var navigator = new RequestNavigator(controller.stream, router);;
-      navigator.registerHandler('route_name', expectAsync1((param) {}, count:1));
+      navigator.registerHandler('route_name', expectAsync2((req, param) {}, count:1));
 
       //when
       controller.add(req);
@@ -59,10 +59,9 @@ void main() {
       router.when(callsTo('match')).alwaysReturn(['route_name', {'param':'value'}]);
 
       var navigator = new RequestNavigator(controller.stream, router);;
-      navigator.registerHandler('route_name', expectAsync1((param) {
-        expect(param, new isInstanceOf<RequestHandlerParameters>());
-        expect(param.req.uri, equals(Uri.parse('/dummy/{param}/')));
-        expect(param.url_params, equals({'param':'value'}));
+      navigator.registerHandler('route_name', expectAsync2((req, param) {
+        expect(req.uri, equals(Uri.parse('/dummy/{param}/')));
+        expect(param, equals({'param':'value'}));
       }, count:1));
 
       //when
@@ -77,7 +76,7 @@ void main() {
       var router = new MockRouter();
 
       var navigator = new RequestNavigator(controller.stream, router);;
-      navigator.registerDefaultHandler(expectAsync1((param) {}, count:1));
+      navigator.registerDefaultHandler(expectAsync2((req, param) {}, count:1));
 
       //when
       controller.add(req);
