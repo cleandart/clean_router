@@ -34,34 +34,53 @@ class HttpResponseMock extends Mock implements HttpResponse {
 
 
 void main() {
-  test ('distinguish between GET and POST', (){
-    //given
-    var controller = new StreamController<HttpRequest>();
-    var req = new HttpRequestMock(Uri.parse('/dummy/url/'),method:'GET');
+  group('(Server)', () {
+    test ('match route', (){
+      //given
+      var controller = new StreamController<HttpRequest>();
+      var req = new HttpRequestMock(Uri.parse('/dummy/url/'));
 
-    var router = new MockRouter();
-    router.when(callsTo('match')).alwaysReturn(['route_name', {}]);
+      var router = new MockRouter();
+      router.when(callsTo('match')).alwaysReturn(['route_name', {}]);
 
-    var navigator = new RequestNavigator(controller.stream, router);;
-    navigator.registerHandler('route_name', 'GET', expectAsync1((req) {}, count:1));
-    navigator.registerHandler('route_name', 'POST', expectAsync1((req) {}, count:0));
+      var navigator = new RequestNavigator(controller.stream, router);;
+      navigator.registerHandler('route_name', expectAsync1((param) {}, count:1));
 
-    //when
-    controller.add(req);
-  });
+      //when
+      controller.add(req);
+    });
 
+    test ('right parameters ', (){
+      //given
+      var controller = new StreamController<HttpRequest>();
+      var req = new HttpRequestMock(Uri.parse('/dummy/{param}/'));
 
-  test ('default handler', (){
-    //given
-    var controller = new StreamController<HttpRequest>();
-    var req = new HttpRequestMock(Uri.parse('/dummy/url/'),method:'GET');
+      var router = new MockRouter();
+      router.when(callsTo('match')).alwaysReturn(['route_name', {'param':'value'}]);
 
-    var router = new MockRouter();
+      var navigator = new RequestNavigator(controller.stream, router);;
+      navigator.registerHandler('route_name', expectAsync1((param) {
+        expect(param, new isInstanceOf<RequestHandlerParameters>());
+        expect(param.req.uri, equals(Uri.parse('/dummy/{param}/')));
+        expect(param.url_params, equals({'param':'value'}));
+      }, count:1));
 
-    var navigator = new RequestNavigator(controller.stream, router);;
-    navigator.registerDefaultHandler(expectAsync1((req) {}, count:1));
+      //when
+      controller.add(req);
+    });
 
-    //when
-    controller.add(req);
+    test ('default handler', (){
+      //given
+      var controller = new StreamController<HttpRequest>();
+      var req = new HttpRequestMock(Uri.parse('/dummy/url/'));
+
+      var router = new MockRouter();
+
+      var navigator = new RequestNavigator(controller.stream, router);;
+      navigator.registerDefaultHandler(expectAsync1((param) {}, count:1));
+
+      //when
+      controller.add(req);
+    });
   });
 }
