@@ -8,6 +8,6 @@ homepage: https://github.com/hleumas/dart-router
 dependencies:
   browser: any
   clean_data:
-    git: git://github.com/hleumas/clean_data.git
+    git: https://github.com/cleandart/clean_data
 dev_dependencies:
   unittest: any
