@@ -107,19 +107,8 @@ void main() {
       expect(view.getLogs().first.args.first.containsKey('arg'),isTrue);
     });
 
-    test('register default view should be done with registerDefaultView', () {
-      // given
-      var pageNavigator = new PageNavigator(new MockRouter(), new Mock());
 
-      //then
-      expect(
-          () => pageNavigator.registerView("default", new MockView()),
-          throwsArgumentError
-      );
-
-    });
-
-    test('navigate to non existing path.', () {
+    test('navigate to non existing path leads to invoking defaultView.', () {
       // given
       var router = new Router(null,{});
       var view = new MockView();
