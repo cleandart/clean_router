@@ -41,7 +41,7 @@ class RequestNavigator {
    * Creates new RequestNavigator listening on [_incoming] and routing via [_router].
    */
   RequestNavigator(this._incoming, this._router){
-    this._incoming.listen(navigate);
+    this._incoming.listen(processHttpRequest);
   }
 
   StreamController _createStreamControllerWithHandler(dynamic handler){
@@ -54,25 +54,23 @@ class RequestNavigator {
    * Registers [Handler] for a [Route] and adds listener to the stream which
    * is also returned.
    */
-  Stream<RequestHandlerParameters> registerHandler(String routeName, dynamic handler){
+  void registerHandler(String routeName, dynamic handler){
     if(_streams.containsKey(routeName)){
-      throw new ArgumentError("Route name '$routeName' already in use in RequestNavigator.");
+      throw new ArgumentError("Cannot register handler as route name '$routeName' already in use in RequestNavigator.");
     }
 
     _streams[routeName] = _createStreamControllerWithHandler(handler);
-    return _streams[routeName].stream;
   }
 
   /**
    * When [Router] matches nothing then [handler] will be called (through the returned [Stream]).
    */
-  Stream<RequestHandlerParameters> registerDefaultHandler(dynamic handler){
+  void registerDefaultHandler(dynamic handler){
     if(_defaultStreamController != null){
-      //TODO warning
+      throw new ArgumentError("Default route already set.");
       _defaultStreamController.close();
     }
     _defaultStreamController = _createStreamControllerWithHandler(handler);
-    return _defaultStreamController.stream;
   }
 
   /**
@@ -80,7 +78,7 @@ class RequestNavigator {
    * whole [HttpRequest] is filtered through [Filter] and if passes all then
    * [HttpRequest] is inserted to the correspondig [Stream].
    */
-  void navigate(HttpRequest req){
+  void processHttpRequest(HttpRequest req){
     var matchInfo = _router.match(req.uri.path);
     if(matchInfo != null){
       if(_streams.containsKey(matchInfo[0])){
