@@ -4,9 +4,6 @@
 
 library clean_router.server;
 
-//TODO Should we match HttpRequest with not set method?
-//TODO How we should handle uri parameters?
-//TODO   should handler be an abstract class / interface?
 //TODO Filters
 
 import "dart:core";
@@ -15,45 +12,40 @@ import 'dart:async';
 import 'common.dart';
 export 'common.dart';
 
-class _ServerRoute{
-  final String routeName;
-  final String method;
+class RequestHandlerParameters{
+  HttpRequest req;
+  Map<String, String> url_params;
 
-  _ServerRoute(this.routeName, this.method);
-
-  bool operator ==(_ServerRoute other) => (this.routeName == other.routeName &&
-      this.method == other.method);
-
-  String toString() => routeName + ":" + method;
-
-  int get hashCode => toString.hashCode;
+  RequestHandlerParameters(this.req, this.url_params);
 }
 
 /**
- * [RequestNavigator] wires together [Route] matching, [Filter]ing of [HttpRequests]
+ * [RequestNavigator] wires together [Route] matching, [Filter]ing of [HttpRequest]s
  * and [Handler] calling. It manages url addresses and bind them handlers.
  */
 class RequestNavigator {
   final Stream<HttpRequest> _incoming;
   final Router _router;
-  final Map<_ServerRoute, StreamController<HttpRequest>> _streams = {};
 
   /**
-   * Contains [Route], [Filter], [Stream] triples where [Stream] has at least one handler.
+   * Maps route names to [Stream]
    */
-  final List _filters = [];
-
-  final _ServerRoute _defaultServerRouteId = new _ServerRoute('default', '');
+  final Map<String, StreamController<RequestHandlerParameters>> _streams = {};
 
   /**
-   * Creates new RequestNavigator listening on [_incoming].
+   * If no route is matched.
+   */
+  StreamController<RequestHandlerParameters> _defaultStreamController = null;
+
+  /**
+   * Creates new RequestNavigator listening on [_incoming] and routing via [_router].
    */
   RequestNavigator(this._incoming, this._router){
     this._incoming.listen(navigate);
   }
 
   StreamController _createStreamControllerWithHandler(dynamic handler){
-    StreamController<HttpRequest> streamController = new StreamController<HttpRequest>();
+    var streamController = new StreamController<RequestHandlerParameters>();
     streamController.stream.listen(handler);
     return streamController;
   }
@@ -62,38 +54,25 @@ class RequestNavigator {
    * Registers [Handler] for a [Route] and adds listener to the stream which
    * is also returned.
    */
-  Stream<HttpRequest> registerHandler(String routeName, String method, dynamic handler){
-    if(routeName == 'default') {
-      throw new ArgumentError("Route name should not be 'default'.");
+  Stream<RequestHandlerParameters> registerHandler(String routeName, dynamic handler){
+    if(_streams.containsKey(routeName)){
+      throw new ArgumentError("Route name '$routeName' already in use in RequestNavigator.");
     }
 
-    var serverRoute = new _ServerRoute(routeName, method);
-    if(_streams.containsKey(serverRoute)){
-      throw new ArgumentError("Route name '$serverRoute' already in use in RequestNavigator.");
-    }
-
-    _streams[serverRoute] = _createStreamControllerWithHandler(handler);
-    return _streams[serverRoute].stream;
+    _streams[routeName] = _createStreamControllerWithHandler(handler);
+    return _streams[routeName].stream;
   }
 
   /**
    * When [Router] matches nothing then [handler] will be called (through the returned [Stream]).
    */
-  Stream<HttpRequest> registerDefaultHandler(dynamic handler){
-    //TODO what should we do if overriding?
-    _streams[_defaultServerRouteId] = _createStreamControllerWithHandler(handler);
-    return _streams[_defaultServerRouteId].stream;
-  }
-
-  /**
-   * If incoming [HttpRequest] matches [route] then [filter] is called.
-   * If the [filter] returns true then registered handler will be called
-   * (through [Stream]). Otherwise [noPassedHandler] will be called (through the
-   * returned [Stream]).
-   */
-  Stream<HttpRequest> registerFilter(Route route, Filter filter, dynamic notPassedHandler){
-    //TODO
-    return null;
+  Stream<RequestHandlerParameters> registerDefaultHandler(dynamic handler){
+    if(_defaultStreamController != null){
+      //TODO warning
+      _defaultStreamController.close();
+    }
+    _defaultStreamController = _createStreamControllerWithHandler(handler);
+    return _defaultStreamController.stream;
   }
 
   /**
@@ -101,33 +80,18 @@ class RequestNavigator {
    * whole [HttpRequest] is filtered through [Filter] and if passes all then
    * [HttpRequest] is inserted to the correspondig [Stream].
    */
-  Stream<HttpRequest> navigate(HttpRequest req){
-    var routeInfo = _router.match(req.uri.path);
-    if(routeInfo != null){
-      return _navigateToServerRoute(req, new _ServerRoute(routeInfo[0], req.method)
-        , routeInfo[1]);
+  void navigate(HttpRequest req){
+    var matchInfo = _router.match(req.uri.path);
+    if(matchInfo != null){
+      if(_streams.containsKey(matchInfo[0])){
+        _streams[matchInfo[0]].add(new RequestHandlerParameters(req, matchInfo[1]));
+      }
+      else{
+        throw new ArgumentError("Stream not found for '${matchInfo[0]}'");
+      }
     }
     else{
-      return _navigateToServerRoute(req, _defaultServerRouteId, {});
+      _defaultStreamController.add(new RequestHandlerParameters(req, {}));
     }
   }
-
-  Stream<HttpRequest> _navigateToServerRoute(HttpRequest req,
-      _ServerRoute serverRoute, Map params){
-
-    if(!_streams.containsKey(serverRoute)){
-      throw new ArgumentError("Stream not found for '$serverRoute'");
-    }
-
-    var streamController = _streams[serverRoute];
-    streamController.add(req);
-    return streamController.stream;
-  }
-}
-
-abstract class Filter{
-  /**
-   * Should work as a WHERE condition.
-   */
-  bool filter(HttpRequest req);
 }
