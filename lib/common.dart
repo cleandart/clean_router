@@ -22,9 +22,11 @@ class Route {
    * very first character of the pattern. Each part can be either static or
    * placeholder. Static part can contain arbitrary number of [a-zA-Z0-9_-]
    * characters. Placeholder part consists of variable name enclosed in curly
-   * braces. Variable name consists of [a-zA-Z0-9_] characters, with the first
+   * braces. Variable name consists of [^{}] characters, with the first
    * character being a letter.
    */
+  //TODO consider not matching _param_name as for example _tail is set when /route/*
+
   Route(String pattern) {
     if (pattern.isEmpty || pattern[0] != '/') {
       throw new FormatException("Url pattern has to begin with '/' character.");
