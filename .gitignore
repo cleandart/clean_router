@@ -1,5 +1,6 @@
 packages
 lib/docs
+lib/todo.dart
 pubspec.lock
 .buildlog
 out/

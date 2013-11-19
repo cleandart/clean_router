@@ -44,16 +44,16 @@ class PageNavigator {
   final Map _views = {};
   View _activeView;
   View _defaultView;
-  
+
   String activePath = null;
-  
+
 /**
  * Creates new [PageNavigator].
  */
   PageNavigator(this._router, this._history);
 
 /**
- * Registeres a [view] for a particular [Route] identified by [route_name] in [Router].
+ * Registeres a [view] for a particular [Route] identified by [routeName] in [Router].
  * It is not allowed to override already registered view.
  */
   void registerView(String routeName, View view) {
@@ -98,7 +98,7 @@ class PageNavigator {
 
     _activeView = _views[routeName];
     _activeRouteName = routeName;
-    
+
     //== update history
     if (pushState) {
       this.pushState();
@@ -131,13 +131,13 @@ class PageNavigator {
       }
     }
   }
-  
+
   void _recalculateActivePath() {
     if(_activeView != _defaultView) {
       activePath = _router.routePath(_activeRouteName, _activeParameters);
     }
   }
-  
+
   void _handleViewTransition(View oldView, View newView) {
     if (oldView != null) {
       oldView.unload();

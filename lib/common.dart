@@ -121,21 +121,32 @@ class Route {
  * translating [Route]s to url/path and vice versa.
  */
 class Router {
-  final Map<String, Route> routes;
-  String host;
+  final Map<String, Route> _routes;
+  String _host;
 
-  Router(this.host, this.routes);
+  Router(this._host, this._routes);
+
+  /**
+   * Registeres a [route] identified by [routeName] in [Router].
+   * It is not allowed to override already registered routes.
+   */
+  void registerRoute(String routeName, Route route) {
+    if(_routes.containsKey(routeName)) {
+      throw new ArgumentError("Route name '$routeName' already in use in Route.");
+    }
+    _routes[routeName] = route;
+  }
 
   /**
    * Returns path part of the url corresponding to the given [routeName] and
    * [parameters]. Accepts [Map] and [Data] as [parameters].
    */
   String routePath(String routeName, dynamic parameters) {
-    var route = this.routes[routeName];
+    var route = this._routes[routeName];
     if (route == null) {
       throw new ArgumentError('Router does not contain a route "$routeName".');
     }
-    return this.routes[routeName].path(parameters);
+    return this._routes[routeName].path(parameters);
   }
 
   /**
@@ -143,15 +154,15 @@ class Router {
    * [parameters]. Accepts both [Map] and [Data] as [parameters].
    */
   String routeUrl(String routeName, dynamic parameters) {
-    return this.host + this.routePath(routeName, parameters);
+    return this._host + this.routePath(routeName, parameters);
   }
 
   /**
    * Returns the List [[routeName, matchedParameters]] matching the [url].
    */
   List match(String url) {
-    for (var key in this.routes.keys) {
-      var match = this.routes[key].match(url);
+    for (var key in this._routes.keys) {
+      var match = this._routes[key].match(url);
       if (match != null) {
         return [key, match];
       }
