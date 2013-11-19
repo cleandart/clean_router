@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+//TODO comment new /* feature
+
 library clean_router.common;
 
 /**
@@ -11,6 +13,7 @@ class Route {
   RegExp _matchExp;
   List<String> _variables = [];
   List _urlParts = [];
+  bool _anyTail = false;
 
   /**
    * Constructs [Route] using [String] pattern.
@@ -22,12 +25,17 @@ class Route {
    * braces. Variable name consists of [a-zA-Z0-9_] characters, with the first
    * character being a letter.
    */
-  Route(pattern) {
+  Route(String pattern) {
     if (pattern.isEmpty || pattern[0] != '/') {
       throw new FormatException("Url pattern has to begin with '/' character.");
     }
+    if(pattern[pattern.length - 1] == '*'){
+      _anyTail = true;
+      pattern = pattern.substring(0, pattern.length - 1);
+    }
+
     if (pattern[pattern.length - 1] != '/') {
-      throw new FormatException("Url pattern has to end with '/' character.");
+      throw new FormatException("Url pattern has to end with '/' or '/*' characters.");
     }
 
     RegExp exp = new RegExp(r"^(?:([\w-]*)|{([^{}]*)})$");
@@ -53,7 +61,12 @@ class Route {
       }
     }
 
-    _matchExp = new RegExp(r"^" + matcherParts.join('/') + r"$");
+    var tailRegExp = r"";
+    if(_anyTail){
+      tailRegExp = r"(.*)";
+    }
+
+    _matchExp = new RegExp(r"^" + matcherParts.join('/') + tailRegExp + r"$");
   }
   /**
    * Matches the [url] against the [Route] pattern and returns [Map] of matched.
@@ -71,6 +84,11 @@ class Route {
     Map result = new Map();
     for (var i = 0; i < _variables.length; i++) {
       result[_variables[i]] = Uri.decodeComponent(match.group(i + 1));
+    }
+
+    //Matched url after prefix
+    if(_anyTail){
+      result["_tail"] = Uri.decodeComponent(match.group(_variables.length + 1));
     }
 
     return result;
