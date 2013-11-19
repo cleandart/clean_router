@@ -161,6 +161,18 @@ int main(){
       expect(path, equals('/static/'));
     });
 
+    test('register route', () {
+      //given
+      Router router = new Router("", {});
+      router.registerRoute('static', new Route('/static/'));
+
+      //when
+      var path = router.routePath("static", {});
+
+      //then
+      expect(path, equals('/static/'));
+    });
+
     test('to path - not existing', () {
       //given
       Router router = new Router("", {'static' : new Route('/static/')});
