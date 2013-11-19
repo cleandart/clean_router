@@ -1,4 +1,4 @@
-name: router
+name: clean_router
 version: 0.0.0
 authors:
 - Samuel Hapák <samuel.hapak@vacuumapps.com>
@@ -9,6 +9,6 @@ homepage: https://github.com/cleandart/clean_router
 dependencies:
   browser: any
   clean_data:
-    git: git://github.com/cleandart/clean_data.git
+    git: https://github.com/cleandart/clean_data
 dev_dependencies:
   unittest: any

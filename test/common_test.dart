@@ -13,14 +13,15 @@ int main(){
       expect(() => new Route(""), throwsFormatException);
       expect(() => new Route("not-starting-with-slash/"),throwsFormatException);
       expect(() => new Route("/not-ending-with-slash"),  throwsFormatException);
-      expect(() => new Route("/#some-chars-not-allowed"),throwsFormatException);
-      expect(() => new Route("/?some-chars-not-allowed"),throwsFormatException);
-      expect(() => new Route("/!some-chars-not-allowed"),throwsFormatException);
-      expect(() => new Route("/.some-chars-not-allowed"),throwsFormatException);
+      expect(() => new Route("/#some-chars-not-allowed/"),throwsFormatException);
+      expect(() => new Route("/?some-chars-not-allowed/"),throwsFormatException);
+      expect(() => new Route("/!some-chars-not-allowed/"),throwsFormatException);
+      expect(() => new Route("/.some-chars-not-allowed/"),throwsFormatException);
       expect(() => new Route("/{not_closed/"),           throwsFormatException);
       expect(() => new Route("/not_open}/"),             throwsFormatException);
       expect(() => new Route("/{{more-brackets}/"),      throwsFormatException);
       expect(() => new Route("/{more-brackets}}/"),      throwsFormatException);
+      expect(() => new Route("/{more-asterisks}}/**"),      throwsFormatException);
     });
 
     test('supported format', () {
@@ -28,6 +29,7 @@ int main(){
       expect(new Route("//"), isNot(isException));
       expect(new Route("////////////////////////"), isNot(isException));
       expect(new Route("/{anything-here4!@#\$%^&*()\\\n}/"), isNot(isException));
+      expect(new Route("/anytail/*"), isNot(isException));
     });
 
     test('matching - static not match', () {
@@ -36,6 +38,17 @@ int main(){
 
       // when
       var match = route.match("/other/");
+
+      // then
+      expect(match, isNull);
+    });
+
+    test('matching - static not match any tail', () {
+      // given
+      var route = new Route("/route/");
+
+      // when
+      var match = route.match("/route/subpath");
 
       // then
       expect(match, isNull);
@@ -119,6 +132,20 @@ int main(){
 
       // then
       expect(params, equals(params_there_and_back));
+    });
+
+    test('match any tail', () {
+      // given
+      var route = new Route("/any-tail/{param}/*");
+
+      // when
+      var match = route.match("/any-tail/value/something/anything");
+
+      // then
+      expect(match, equals({
+        "param" : "value",
+        "_tail" : "something/anything",
+      }));
     });
   });
 

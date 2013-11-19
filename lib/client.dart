@@ -7,6 +7,7 @@ import "dart:core";
 import "dart:async";
 import 'package:clean_data/clean_data.dart';
 import 'common.dart';
+export 'common.dart';
 
 /**
  * [View] is responsible for manipulating data received from server to be used for HTML.
@@ -41,11 +42,11 @@ class PageNavigator {
   Data _activeParameters;
   StreamSubscription _dataSubscription;
   final Map _views = {};
-
-  String _activePath = null;
-  String get activePath => _activeRouteName == null || _activeRouteName == 'default'
-      ? _activePath : _router.routePath(_activeRouteName, _activeParameters);
-
+  View _activeView;
+  View _defaultView;
+  
+  String activePath = null;
+  
 /**
  * Creates new [PageNavigator].
  */
@@ -56,9 +57,6 @@ class PageNavigator {
  * It is not allowed to override already registered view.
  */
   void registerView(String routeName, View view) {
-    if(routeName == 'default') {
-      throw new ArgumentError("Route name should not be 'default'.");
-    }
     if(_views.containsKey(routeName)) {
       throw new ArgumentError("Route name '$routeName' already in use in PageNavigator.");
     }
@@ -69,7 +67,7 @@ class PageNavigator {
  * Registers a [View] which is called when router does not find any match.
  */
   void registerDefaultView(View view) {
-    _views['default'] = view;
+    _defaultView = view;
   }
 
 /**
@@ -89,17 +87,18 @@ class PageNavigator {
       throw new ArgumentError("View not found for '$routeName'");
     }
 
-    if (_views[_activeRouteName] != _views[routeName]) {
+    if (_activeView != _views[routeName]) {
       _setActiveParameters(parameters);
-      _handleViewTransition(_views[_activeRouteName], _views[routeName]);
+      _handleViewTransition(_activeView, _views[routeName]);
     }
     else {
       _activeParameters.removeAll(_activeParameters.keys.toList());
       _activeParameters.addAll(parameters);
     }
 
+    _activeView = _views[routeName];
     _activeRouteName = routeName;
-
+    
     //== update history
     if (pushState) {
       this.pushState();
@@ -109,22 +108,6 @@ class PageNavigator {
     }
   }
 
-  void _handleViewTransition(View oldView, View newView) {
-    if (oldView != null) {
-      oldView.unload();
-    }
-    newView.load(_activeParameters);
-  }
-
-  void _setActiveParameters(Map parameters) {
-    if(_dataSubscription != null) {
-      _dataSubscription.cancel();
-    }
-    var data = new Data.fromMap(parameters);
-    _activeParameters = data;
-    _dataSubscription = _activeParameters.onChange.listen(
-        (ChangeSet change) => _updateHistoryState());
-  }
 
 /**
  *  Navigates the browser to the selected Path using [navigate] function.
@@ -136,9 +119,9 @@ class PageNavigator {
     }
     else {
       _setActiveParameters({});
-      _handleViewTransition(_views[_activeRouteName], _views['default']);
-      _activeRouteName = null;
-      _activePath = path;
+      _handleViewTransition(_activeView, _defaultView);
+      _activeView = _defaultView ;
+      activePath = path;
 
       if (pushState) {
         this.pushState();
@@ -148,8 +131,32 @@ class PageNavigator {
       }
     }
   }
+  
+  void _recalculateActivePath() {
+    if(_activeView != _defaultView) {
+      activePath = _router.routePath(_activeRouteName, _activeParameters);
+    }
+  }
+  
+  void _handleViewTransition(View oldView, View newView) {
+    if (oldView != null) {
+      oldView.unload();
+    }
+    newView.load(_activeParameters);
+  }
+
+  void _setActiveParameters(Map parameters) {
+    if(_dataSubscription != null) {
+      _dataSubscription.cancel();
+    }
+    var data = new Data.from(parameters);
+    _activeParameters = data;
+    _dataSubscription = _activeParameters.onChange.listen(
+        (ChangeSet change) => _updateHistoryState());
+  }
 
   void _updateHistoryState() {
+    _recalculateActivePath();
     _history.replaceState(new Object(), "", activePath);
   }
 
@@ -160,6 +167,7 @@ class PageNavigator {
  *   it will only call [_history.replaceState] which will do no harm.
  */
   void pushState() {
+    _recalculateActivePath();
     this._history.pushState(new Object(), "", activePath);
   }
 }
