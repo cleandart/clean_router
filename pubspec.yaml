@@ -3,11 +3,12 @@ version: 0.0.0
 authors:
 - Samuel Hapák <samuel.hapak@vacuumapps.com>
 - Peter Csiba <petherz@gmail.com>
-description: A sample web application
-homepage: https://github.com/hleumas/dart-router
+- Jozef Brandys <jozef.brandys@gmail.com>
+description: Routing requests both on client and server side.
+homepage: https://github.com/cleandart/clean_router
 dependencies:
   browser: any
   clean_data:
-    git: git://github.com/hleumas/clean_data.git
+    git: git://github.com/cleandart/clean_data.git
 dev_dependencies:
   unittest: any
