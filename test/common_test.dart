@@ -147,6 +147,19 @@ int main(){
         "_tail" : "something/anything",
       }));
     });
+
+    test('match all', () {
+      // given
+      var route = new Route("/*");
+
+      // when
+      var match = route.match("/any-tail/value/something/anything");
+
+      // then
+      expect(match, equals({
+        "_tail" : "any-tail/value/something/anything",
+      }));
+    });
   });
 
   group('Router', () {
@@ -225,6 +238,20 @@ int main(){
       //then
       expect(match[0], equals("one-param"));
       expect(match[1], equals({"param":"value"}));
+    });
+
+    test('path matching - order of routes matter', () {
+      //given
+      Router router = new Router("", {});
+      router.registerRoute('static', new Route('/static/'));
+      router.registerRoute('all_other', new Route('/*'));
+
+      //when
+      var match = router.match("/static/");
+
+      //then
+      expect(match[0], equals("static"));
+      expect(match[1], equals({}));
     });
 
     test('path matching - undefined', () {
