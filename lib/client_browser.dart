@@ -20,11 +20,34 @@ class HashHistory  {
 }
 
 
-PageNavigator createPageNavigator(Router router){
-  if (window.history.pushState && window.history.replaceState) {
-    return new PageNavigator(router, window.history);
+PageNavigator createPageNavigator() {
+  var location = window.location;
+  var urlPrefix = "${location.protocol}//${location.host}";
+  var router = new Router(urlPrefix, {});
+
+  var history = History.supportsState ? window.history : new HashHistory();
+  var navigator = new PageNavigator(router, history);
+
+  window.document.body.onClick.matches('a[href]').listen((Event event) {
+    var a = event.matchingTarget;
+    var href = event.matchingTarget.href;
+
+    if (a.protocol == window.location.protocol && a.host == window.location.host) {
+      event.preventDefault();
+      navigator.navigateToPath(a.pathname, pushState: true);
+    }
+  });
+
+  if (History.supportsState) {
+    window.onPopState.listen((PopStateEvent event) {
+      navigator.navigateToPath(window.location.pathname);
+    });
+
+  } else {
+    window.onHashChange.listen((event) {
+      navigator.navigateToPath(window.location.hash.substring(1));
+    });
   }
-  else {
-    return new PageNavigator(router, new HashHistory());
-  }
+
+  return navigator;
 }

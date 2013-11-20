@@ -36,7 +36,7 @@ abstract class View {
  * It updates url (replaceState, pushState) if the url params are changed in the view.
  */
 class PageNavigator {
-  final Router _router;
+  final Router router;
   final dynamic _history;
   String _activeRouteName;
   Data _activeParameters;
@@ -50,7 +50,7 @@ class PageNavigator {
 /**
  * Creates new [PageNavigator].
  */
-  PageNavigator(this._router, this._history);
+  PageNavigator(this.router, this._history);
 
 /**
  * Registeres a [view] for a particular [Route] identified by [routeName] in [Router].
@@ -113,7 +113,7 @@ class PageNavigator {
  *  Navigates the browser to the selected Path using [navigate] function.
  */
   void navigateToPath(String path, {bool pushState: false}) {
-    var routeInfo = _router.match(path);
+    var routeInfo = router.match(path);
     if(routeInfo != null) {
       navigate(routeInfo[0], routeInfo[1], pushState: pushState);
     }
@@ -134,7 +134,7 @@ class PageNavigator {
 
   void _recalculateActivePath() {
     if(_activeView != _defaultView) {
-      activePath = _router.routePath(_activeRouteName, _activeParameters);
+      activePath = router.routePath(_activeRouteName, _activeParameters);
     }
   }
 
@@ -157,7 +157,7 @@ class PageNavigator {
 
   void _updateHistoryState() {
     _recalculateActivePath();
-    _history.replaceState(new Object(), "", activePath);
+    _history.replaceState({}, "", activePath);
   }
 
 /**
@@ -168,6 +168,6 @@ class PageNavigator {
  */
   void pushState() {
     _recalculateActivePath();
-    this._history.pushState(new Object(), "", activePath);
+    this._history.pushState({}, "", activePath);
   }
 }
