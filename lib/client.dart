@@ -171,31 +171,3 @@ class PageNavigator {
     this._history.pushState(new Object(), "", activePath);
   }
 }
-
-/**
- * Should have the closest approximation of [dart.dom.history] as possible for browsers not supporting [HTML5].
- * This is implemented via tokens after hashes in url which are allowed to change by browsers.
- *
- * See http://api.dartlang.org/docs/releases/latest/dart_html/History.html#pushState .
- */
-/*class HashHistory {
-  /**
-   * Navigates to url.
-   */
-  void pushState(Object data, String title, [String url]) {
-    window.location.hash = '#' + url;
-  }
-
-  /**
-   * Navigates to url.
-   */
-  void replaceState(Object data, String title, [String url]) {
-    window.location.hash = '#' + url;
-  }
-}
-*/
-
-
-
-
-
