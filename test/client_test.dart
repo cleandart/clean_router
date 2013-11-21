@@ -34,10 +34,6 @@ class SpyView extends Mock implements View {
 }
 
 void main() {
-
-/**
- * Page navigator is tested as simulating simple client actions chronologically.
- */
   group('PageNavigator', () {
 
     //when & test
@@ -83,30 +79,39 @@ void main() {
       history.getLogs(callsTo('replaceState')).verify(happenedOnce);
 
       view.getLogs(callsTo('load')).verify(happenedOnce);
-      expect(view.getLogs().first.args.first.isEmpty, isTrue);
+      expect(view.getLogs().first.args.first["_routeName"], equals("static"));
     });
 
     test('navigate to path.', () {
       // given
       var router = new MockRouter();
       var view = new MockView();
-      router.when(callsTo('match')).alwaysReturn(["route", {'arg': '1'}]);
-      router.when(callsTo('routePath')).alwaysReturn("/dummy/url/");
+      router.when(callsTo('match')).alwaysReturn(["route", {'param': 'value'}]);
+      router.when(callsTo('routePath')).alwaysReturn("/dummy/value/");
       var pageNavigator = new PageNavigator(router, new Mock());
       pageNavigator.registerView("route", view);
 
       // when
-      pageNavigator.navigateToPath("/dummy/url/");
+      pageNavigator.navigateToPath("/dummy/value/");
 
       // then
-      expect(pageNavigator.activePath, equals("/dummy/url/"));
+      expect(pageNavigator.activePath, equals("/dummy/value/"));
 
       router.getLogs(callsTo('match')).verify(happenedOnce);
 
       view.getLogs(callsTo('load')).verify(happenedOnce);
-      expect(view.getLogs().first.args.first.containsKey('arg'),isTrue);
+      expect(view.getLogs().first.args.first['param'], equals('value'));
+      expect(view.getLogs().first.args.first['_routeName'], equals('route'));
     });
 
+    test('cannot register view with default name.', () {
+      // given
+      var pageNavigator = new PageNavigator(new MockRouter(), new Mock());
+
+      // when
+      expect(() => pageNavigator.registerView(PageNavigator.PARAM_ROUTE_NAME, new MockView()),
+          throwsArgumentError);
+    });
 
     test('navigate to non existing path leads to invoking defaultView.', () {
       // given
@@ -123,6 +128,8 @@ void main() {
       expect(pageNavigator.activePath, equals("/dummy/url/"));
 
       view.getLogs(callsTo('load')).verify(happenedOnce);
+      expect(view.getLogs().first.args.first['_routeName'],
+          equals(PageNavigator.PARAM_ROUTE_NAME_DEFAULT));
     });
 
     test('push state', () {
@@ -177,8 +184,8 @@ void main() {
     test('navigate to same view with different params', () {
       //given
       var route = new Route("/dummy/{param}/");
-      var paramsOld = {'param': 'cute_kitty'};
-      var paramsNew = {'param': 'sad_kitty'};
+      var paramsOld = {'param': 'sad_kitty'};
+      var paramsNew = {'param': 'happy_kitty'};
       var pathNew = route.path(paramsNew);
 
       var view = new SpyView();
@@ -203,8 +210,8 @@ void main() {
       expect(history.getLogs(callsTo('replaceState')).last.args[2], equals(pathNew));
 
       //view data state
-      expect(view._real.data.keys.first, equals(paramsNew.keys.first));
-      expect(view._real.data.values.first, equals(paramsNew.values.first));
+      expect(view._real.data['param'], equals('happy_kitty'));
+      expect(view._real.data['_routeName'], equals('page'));
       //no more load/unload for view
       view.getLogs(callsTo("load")).verify(happenedExactly(1));
       view.getLogs(callsTo("unload")).verify(neverHappened);
@@ -234,7 +241,6 @@ void main() {
 
       data['param'] = 'vacuumcleaner';
     });
-
   });
 }
 

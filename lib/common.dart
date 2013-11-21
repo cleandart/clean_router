@@ -22,8 +22,8 @@ class Route {
    * very first character of the pattern. Each part can be either static or
    * placeholder. Static part can contain arbitrary number of [a-zA-Z0-9_-]
    * characters. Placeholder part consists of variable name enclosed in curly
-   * braces. Variable name consists of [^{}] characters, with the first
-   * character being a letter.
+   * braces. Variable name consists of any characters expect curly braces
+   * with the first character being not an underscore.
    */
 
   Route(String pattern) {
