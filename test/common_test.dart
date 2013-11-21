@@ -21,7 +21,8 @@ int main(){
       expect(() => new Route("/not_open}/"),             throwsFormatException);
       expect(() => new Route("/{{more-brackets}/"),      throwsFormatException);
       expect(() => new Route("/{more-brackets}}/"),      throwsFormatException);
-      expect(() => new Route("/{more-asterisks}}/**"),      throwsFormatException);
+      expect(() => new Route("/{more-asterisks}/**"),      throwsFormatException);
+      expect(() => new Route("/{_cannot-start-with-underscore}/"), throwsFormatException);
     });
 
     test('supported format', () {
@@ -30,6 +31,7 @@ int main(){
       expect(new Route("////////////////////////"), isNot(isException));
       expect(new Route("/{anything-here4!@#\$%^&*()\\\n}/"), isNot(isException));
       expect(new Route("/anytail/*"), isNot(isException));
+      expect(new Route("/{-__underscores-ok-if-not-first}/*"), isNot(isException));
     });
 
     test('matching - static not match', () {

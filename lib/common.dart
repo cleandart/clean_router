@@ -25,7 +25,6 @@ class Route {
    * braces. Variable name consists of [^{}] characters, with the first
    * character being a letter.
    */
-  //TODO consider not matching _param_name as for example _tail is set when /route/*
 
   Route(String pattern) {
     if (pattern.isEmpty || pattern[0] != '/') {
@@ -40,7 +39,7 @@ class Route {
       throw new FormatException("Url pattern has to end with '/' or '/*' characters.");
     }
 
-    RegExp exp = new RegExp(r"^(?:([\w-]*)|{([^{}]*)})$");
+    RegExp exp = new RegExp(r"^(?:([\w-]*)|{([^_{}][^{}]*)})$");
     var matcherParts = new List();
     var parts = pattern.split('/');
     for (var part in parts) {
@@ -70,6 +69,7 @@ class Route {
 
     _matchExp = new RegExp(r"^" + matcherParts.join('/') + tailRegExp + r"$");
   }
+
   /**
    * Matches the [url] against the [Route] pattern and returns [Map] of matched.
    * This is the inverse function to [Route.path].
