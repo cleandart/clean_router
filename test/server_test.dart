@@ -42,17 +42,18 @@ void main() {
 
     test ('default handler', (){
       // given
+      var router = new Router("", {});
+      router.registerRoute("static", new Route("/static/"));
+
       var controller = new StreamController<HttpRequest>();
-      var req = new HttpRequestMock(Uri.parse('/dummy/url/'));
-
-      var router = new MockRouter();
-
       var navigator = new RequestNavigator(controller.stream, router);
+      var req = new HttpRequestMock(Uri.parse('/not-existing/'));
 
       // when
       controller.add(req);
 
       // then
+      navigator.registerHandler("static", expectAsync2((req, param) {}, count:0));
       navigator.registerDefaultHandler(expectAsync2((req, param) {}, count:1));
     });
   });
