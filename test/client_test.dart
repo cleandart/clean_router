@@ -34,7 +34,7 @@ class SpyView extends Mock implements View {
 }
 
 void main() {
-  group('PageNavigator', () {
+  group('(PageNavigator)', () {
 
     //when & test
     test('should be initialized with no active route', () {
