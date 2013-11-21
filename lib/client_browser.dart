@@ -6,6 +6,7 @@ library clean_router.client_browser;
 
 import "dart:html";
 import 'client.dart';
+import 'dart:async';
 export 'client.dart';
 
 class HashHistory  {
@@ -27,6 +28,11 @@ PageNavigator createPageNavigator() {
 
   var history = History.supportsState ? window.history : new HashHistory();
   var navigator = new PageNavigator(router, history);
+  Timer.run(() {
+      var path = window.location.pathname;
+      path += path.endsWith('/') ? '' : '/';
+      navigator.navigateToPath(path, pushState: false);
+  });
 
   window.document.body.onClick.matches('a[href]').listen((Event event) {
     var a = event.matchingTarget;
@@ -40,12 +46,11 @@ PageNavigator createPageNavigator() {
 
   if (History.supportsState) {
     window.onPopState.listen((PopStateEvent event) {
-      navigator.navigateToPath(window.location.pathname);
+      navigator.navigateToPath(window.location.pathname, pushState: false);
     });
-
   } else {
     window.onHashChange.listen((event) {
-      navigator.navigateToPath(window.location.hash.substring(1));
+      navigator.navigateToPath(window.location.hash.substring(1), pushState: false);
     });
   }
 

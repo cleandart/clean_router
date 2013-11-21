@@ -40,7 +40,7 @@ class Route {
       throw new FormatException("Url pattern has to end with '/' or '/*' characters.");
     }
 
-    RegExp exp = new RegExp(r"^(?:([\w-]*)|{([^{}]*)})$");
+    RegExp exp = new RegExp(r"^(?:([\w-.]*)|{([^{}]*)})$");
     var matcherParts = new List();
     var parts = pattern.split('/');
     for (var part in parts) {
