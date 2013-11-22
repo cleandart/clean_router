@@ -5,10 +5,10 @@
 library commont_test;
 
 import 'package:unittest/unittest.dart';
-import '../lib/common.dart';
+import 'package:clean_router/common.dart';
 
 int main(){
-  group('Route', () {
+  group('(Route)', () {
     test('unsupported format', () {
       expect(() => new Route(""), throwsFormatException);
       expect(() => new Route("not-starting-with-slash/"),throwsFormatException);
@@ -20,7 +20,8 @@ int main(){
       expect(() => new Route("/not_open}/"),             throwsFormatException);
       expect(() => new Route("/{{more-brackets}/"),      throwsFormatException);
       expect(() => new Route("/{more-brackets}}/"),      throwsFormatException);
-      expect(() => new Route("/{more-asterisks}}/**"),      throwsFormatException);
+      expect(() => new Route("/{more-asterisks}/**"),      throwsFormatException);
+      expect(() => new Route("/{_cannot-start-with-underscore}/"), throwsFormatException);
     });
 
     test('supported format', () {
@@ -30,6 +31,7 @@ int main(){
       expect(new Route("////////////////////////"), isNot(isException));
       expect(new Route("/{anything-here4!@#\$%^&*()\\\n}/"), isNot(isException));
       expect(new Route("/anytail/*"), isNot(isException));
+      expect(new Route("/{-__underscores-ok-if-not-first}/*"), isNot(isException));
     });
 
     test('matching - static not match', () {
@@ -162,7 +164,7 @@ int main(){
     });
   });
 
-  group('Router', () {
+  group('(Router)', () {
     test('to path - static', () {
       //given
       Router router = new Router("", {'static' : new Route('/static/')});
@@ -225,7 +227,7 @@ int main(){
 
       //then
       expect(match[0], equals("static"));
-      expect(match[1], equals({}));
+      expect(match[1], equals({PARAM_ROUTE_NAME: 'static'}));
     });
 
     test('path matching - one parameter', () {
@@ -237,7 +239,7 @@ int main(){
 
       //then
       expect(match[0], equals("one-param"));
-      expect(match[1], equals({"param":"value"}));
+      expect(match[1], equals({"param":"value", PARAM_ROUTE_NAME: 'one-param'}));
     });
 
     test('path matching - order of routes matter', () {
@@ -251,7 +253,7 @@ int main(){
 
       //then
       expect(match[0], equals("static"));
-      expect(match[1], equals({}));
+      expect(match[1], equals({PARAM_ROUTE_NAME: 'static'}));
     });
 
     test('path matching - undefined', () {

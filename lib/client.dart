@@ -36,10 +36,24 @@ abstract class View {
  * It updates url (replaceState, pushState) if the url params are changed in the view.
  */
 class PageNavigator {
+
+
   final Router router;
+
+  /**
+   * History object of the browser.
+   */
   final dynamic _history;
+
+  /**
+   * What is active.
+   */
   String _activeRouteName;
   Data _activeParameters;
+
+  /**
+   * Subsription to Data shared with actual View.
+   */
   StreamSubscription _dataSubscription;
   final Map _views = {};
   View _activeView;
@@ -60,6 +74,7 @@ class PageNavigator {
     if(_views.containsKey(routeName)) {
       throw new ArgumentError("Route name '$routeName' already in use in PageNavigator.");
     }
+
     _views[routeName] = view;
   }
 
@@ -86,6 +101,9 @@ class PageNavigator {
     if(!_views.containsKey(routeName)) {
       throw new ArgumentError("View not found for '$routeName'");
     }
+
+    // Param names starting with underscored are reserved in [Route]
+    parameters[PARAM_ROUTE_NAME] = routeName;
 
     if (_activeView != _views[routeName]) {
       _setActiveParameters(parameters);

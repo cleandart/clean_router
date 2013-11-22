@@ -22,10 +22,9 @@ class Route {
    * very first character of the pattern. Each part can be either static or
    * placeholder. Static part can contain arbitrary number of [a-zA-Z0-9_-]
    * characters. Placeholder part consists of variable name enclosed in curly
-   * braces. Variable name consists of [^{}] characters, with the first
-   * character being a letter.
+   * braces. Variable name consists of any characters expect curly braces
+   * with the first character being not an underscore.
    */
-  //TODO consider not matching _param_name as for example _tail is set when /route/*
 
   Route(String pattern) {
     if (pattern.isEmpty || pattern[0] != '/') {
@@ -40,7 +39,8 @@ class Route {
       throw new FormatException("Url pattern has to end with '/' or '/*' characters.");
     }
 
-    RegExp exp = new RegExp(r"^(?:([\w-.]*)|{([^{}]*)})$");
+    RegExp exp = new RegExp(r"^(?:([\w-.]*)|{([^_{}][^{}]*)})$");
+
     var matcherParts = new List();
     var parts = pattern.split('/');
     for (var part in parts) {
@@ -70,6 +70,7 @@ class Route {
 
     _matchExp = new RegExp(r"^" + matcherParts.join('/') + tailRegExp + r"$");
   }
+
   /**
    * Matches the [url] against the [Route] pattern and returns [Map] of matched.
    * This is the inverse function to [Route.path].
@@ -119,10 +120,17 @@ class Route {
 }
 
 /**
+ * When navigating to default view it will get
+ * parameters {PARAM_ROUTE_NAME : PARAM_ROUTE_NAME_DEFAULT}
+ */
+const PARAM_ROUTE_NAME = "_routeName";
+
+/**
  * [Router] consists of multiple named [Route]s and provides methods for
  * translating [Route]s to url/path and vice versa.
  */
 class Router {
+
   final Map<String, Route> _routes;
   String _host;
 
@@ -135,6 +143,9 @@ class Router {
   void registerRoute(String routeName, Route route) {
     if(_routes.containsKey(routeName)) {
       throw new ArgumentError("Route name '$routeName' already in use in Route.");
+    }
+    if(routeName == PARAM_ROUTE_NAME) {
+      throw new ArgumentError("Route name cannot be '$PARAM_ROUTE_NAME' in PageNavigator.");
     }
     _routes[routeName] = route;
   }
@@ -166,6 +177,7 @@ class Router {
     for (var key in this._routes.keys) {
       var match = this._routes[key].match(url);
       if (match != null) {
+        match[PARAM_ROUTE_NAME] = key;
         return [key, match];
       }
     }
