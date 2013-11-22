@@ -16,7 +16,6 @@ int main(){
       expect(() => new Route("/#some-chars-not-allowed/"),throwsFormatException);
       expect(() => new Route("/?some-chars-not-allowed/"),throwsFormatException);
       expect(() => new Route("/!some-chars-not-allowed/"),throwsFormatException);
-      expect(() => new Route("/.some-chars-not-allowed/"),throwsFormatException);
       expect(() => new Route("/{not_closed/"),           throwsFormatException);
       expect(() => new Route("/not_open}/"),             throwsFormatException);
       expect(() => new Route("/{{more-brackets}/"),      throwsFormatException);
@@ -27,6 +26,7 @@ int main(){
     test('supported format', () {
       expect(new Route("/"), isNot(isException));
       expect(new Route("//"), isNot(isException));
+      expect(new Route("/index.html/"), isNot(isException));
       expect(new Route("////////////////////////"), isNot(isException));
       expect(new Route("/{anything-here4!@#\$%^&*()\\\n}/"), isNot(isException));
       expect(new Route("/anytail/*"), isNot(isException));
