@@ -5,7 +5,7 @@
 library commont_test;
 
 import 'package:unittest/unittest.dart';
-import '../lib/common.dart';
+import 'package:clean_router/common.dart';
 
 int main(){
   group('(Route)', () {
@@ -227,7 +227,7 @@ int main(){
 
       //then
       expect(match[0], equals("static"));
-      expect(match[1], equals({}));
+      expect(match[1], equals({PARAM_ROUTE_NAME: 'static'}));
     });
 
     test('path matching - one parameter', () {
@@ -239,7 +239,7 @@ int main(){
 
       //then
       expect(match[0], equals("one-param"));
-      expect(match[1], equals({"param":"value"}));
+      expect(match[1], equals({"param":"value", PARAM_ROUTE_NAME: 'one-param'}));
     });
 
     test('path matching - order of routes matter', () {
@@ -253,7 +253,7 @@ int main(){
 
       //then
       expect(match[0], equals("static"));
-      expect(match[1], equals({}));
+      expect(match[1], equals({PARAM_ROUTE_NAME: 'static'}));
     });
 
     test('path matching - undefined', () {

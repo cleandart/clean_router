@@ -120,10 +120,17 @@ class Route {
 }
 
 /**
+ * When navigating to default view it will get
+ * parameters {PARAM_ROUTE_NAME : PARAM_ROUTE_NAME_DEFAULT}
+ */
+const PARAM_ROUTE_NAME = "_routeName";
+
+/**
  * [Router] consists of multiple named [Route]s and provides methods for
  * translating [Route]s to url/path and vice versa.
  */
 class Router {
+
   final Map<String, Route> _routes;
   String _host;
 
@@ -136,6 +143,9 @@ class Router {
   void registerRoute(String routeName, Route route) {
     if(_routes.containsKey(routeName)) {
       throw new ArgumentError("Route name '$routeName' already in use in Route.");
+    }
+    if(routeName == PARAM_ROUTE_NAME) {
+      throw new ArgumentError("Route name cannot be '$PARAM_ROUTE_NAME' in PageNavigator.");
     }
     _routes[routeName] = route;
   }
@@ -167,6 +177,7 @@ class Router {
     for (var key in this._routes.keys) {
       var match = this._routes[key].match(url);
       if (match != null) {
+        match[PARAM_ROUTE_NAME] = key;
         return [key, match];
       }
     }

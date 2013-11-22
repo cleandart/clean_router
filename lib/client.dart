@@ -36,12 +36,7 @@ abstract class View {
  * It updates url (replaceState, pushState) if the url params are changed in the view.
  */
 class PageNavigator {
-  /**
-   * When navigating to default view it will get
-   * parameters {PARAM_ROUTE_NAME : PARAM_ROUTE_NAME_DEFAULT}
-   */
-  static final String PARAM_ROUTE_NAME = "_routeName";
-  static final String PARAM_ROUTE_NAME_DEFAULT = "_default";
+
 
   final Router router;
 
@@ -79,9 +74,7 @@ class PageNavigator {
     if(_views.containsKey(routeName)) {
       throw new ArgumentError("Route name '$routeName' already in use in PageNavigator.");
     }
-    if(routeName == PARAM_ROUTE_NAME) {
-      throw new ArgumentError("Route name cannot be '$PARAM_ROUTE_NAME' in PageNavigator.");
-    }
+
     _views[routeName] = view;
   }
 
@@ -143,7 +136,7 @@ class PageNavigator {
       navigate(routeInfo[0], routeInfo[1], pushState: pushState);
     }
     else {
-      _setActiveParameters({PARAM_ROUTE_NAME:PARAM_ROUTE_NAME_DEFAULT});
+      _setActiveParameters({});
       _handleViewTransition(_activeView, _defaultView);
       _activeView = _defaultView ;
       activePath = path;

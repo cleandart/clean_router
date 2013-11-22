@@ -104,15 +104,6 @@ void main() {
       expect(view.getLogs().first.args.first['_routeName'], equals('route'));
     });
 
-    test('cannot register view with default name.', () {
-      // given
-      var pageNavigator = new PageNavigator(new MockRouter(), new Mock());
-
-      // when
-      expect(() => pageNavigator.registerView(PageNavigator.PARAM_ROUTE_NAME, new MockView()),
-          throwsArgumentError);
-    });
-
     test('navigate to non existing path leads to invoking defaultView.', () {
       // given
       var router = new Router(null,{});
@@ -128,8 +119,6 @@ void main() {
       expect(pageNavigator.activePath, equals("/dummy/url/"));
 
       view.getLogs(callsTo('load')).verify(happenedOnce);
-      expect(view.getLogs().first.args.first['_routeName'],
-          equals(PageNavigator.PARAM_ROUTE_NAME_DEFAULT));
     });
 
     test('push state', () {
