@@ -146,7 +146,7 @@ class Router {
    * Registeres a [route] identified by [routeName] in [Router].
    * It is not allowed to override already registered routes.
    */
-  void registerRoute(String routeName, Route route) {
+  void addRoute(String routeName, Route route) {
     if(_routes.containsKey(routeName)) {
       throw new ArgumentError("Route name '$routeName' already in use in Route.");
     }

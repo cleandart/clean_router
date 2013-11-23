@@ -190,7 +190,7 @@ int main(){
     test('register route', () {
       //given
       Router router = new Router("", {});
-      router.registerRoute('static', new Route('/static/'));
+      router.addRoute('static', new Route('/static/'));
 
       //when
       var path = router.routePath("static", {});
@@ -256,8 +256,8 @@ int main(){
     test('path matching - order of routes matter', () {
       //given
       Router router = new Router("", {});
-      router.registerRoute('static', new Route('/static/'));
-      router.registerRoute('all_other', new Route('/*'));
+      router.addRoute('static', new Route('/static/'));
+      router.addRoute('all_other', new Route('/*'));
 
       //when
       var match = router.match("/static/");

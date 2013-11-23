@@ -43,7 +43,7 @@ void main() {
     test ('default handler', (){
       // given
       var router = new Router("", {});
-      router.registerRoute("static", new Route("/static/"));
+      router.addRoute("static", new Route("/static/"));
 
       var controller = new StreamController<HttpRequest>();
       var navigator = new RequestNavigator(controller.stream, router);
