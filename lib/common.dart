@@ -6,6 +6,8 @@
 
 library clean_router.common;
 
+const PARAM_TAIL = '_tail';
+
 /**
  * Maps [Map] of variables to [String] Url component and vice versa.
  */
@@ -91,7 +93,7 @@ class Route {
 
     //Matched url after prefix
     if(_anyTail){
-      result["_tail"] = Uri.decodeComponent(match.group(_variables.length + 1));
+      result[PARAM_TAIL] = Uri.decodeComponent(match.group(_variables.length + 1));
     }
 
     return result;
@@ -100,20 +102,24 @@ class Route {
   /**
    * Constructs the [url] using the [Route] pattern and values in [variables].
    * This is theiInverse function to [Route.match].
-   * Accepts both [Map] and [Data] as parameters.
-   * All [variables] of [Route] must be provided.
+   * Accepts both [Map] as parameters.
+   * All [args] of [Route] must be provided.
    */
-  String path(dynamic variables) {
+  String path(Map args) {
     var parts = [];
     for (var part in this._urlParts) {
       var value = part['value'];
       if (part['isVariable']) {
-        value = variables[value];
+        value = args[value];
         if (value == null) {
           throw new ArgumentError("Missing value for ${part['value']}.");
         }
       }
       parts.add(Uri.encodeComponent(value));
+    }
+    if (_anyTail) {
+      parts.removeLast();
+      parts.add(args[PARAM_TAIL]);
     }
     return parts.join('/');
   }

@@ -162,6 +162,17 @@ int main(){
         "_tail" : "any-tail/value/something/anything",
       }));
     });
+
+    test('to path -- with tail', () {
+      //given
+      var route = new Route('/tail/*');
+
+      //when
+      var path = route.path({'_tail': 'anytail'});
+
+      //then
+      expect(path, equals('/tail/anytail'));
+    });
   });
 
   group('(Router)', () {
