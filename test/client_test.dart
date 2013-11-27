@@ -4,10 +4,11 @@
 
 library client_test;
 
+import 'dart:async';
 import 'package:unittest/unittest.dart';
-import '../lib/client.dart';
 import 'package:unittest/mock.dart';
 import 'package:clean_data/clean_data.dart';
+import '../lib/client.dart';
 
 // Spy for View
 class DummyView implements View {
@@ -191,19 +192,23 @@ void main() {
       navigator.navigate("page", paramsNew);
 
       //then (should propagate the change in data to view)
-      expect(navigator.activePath, equals(pathNew));
+      return new Future.delayed(new Duration(milliseconds: 100), () {
+        //pageNavigator state
+        expect(navigator.activePath, equals(pathNew));
 
-      //history state
-      //2 for navigate(old) and navigate(new)
-      history.getLogs(callsTo("replaceState")).verify(happenedExactly(2));
-      expect(history.getLogs(callsTo('replaceState')).last.args[2], equals(pathNew));
+        //history state
+        //3 for navigate(old) and navigate(new) and data.onChange
+        history.getLogs(callsTo("replaceState")).verify(happenedExactly(3));
+        expect(history.getLogs(callsTo('replaceState')).last.args[2], equals(pathNew));
 
-      //view data state
-      expect(view._real.data['param'], equals('happy_kitty'));
-      expect(view._real.data['_routeName'], equals('page'));
-      //no more load/unload for view
-      view.getLogs(callsTo("load")).verify(happenedExactly(1));
-      view.getLogs(callsTo("unload")).verify(neverHappened);
+        //view data state
+        expect(view._real.data['param'], equals('happy_kitty'));
+        expect(view._real.data['_routeName'], equals('page'));
+
+        //no more load/unload for view
+        view.getLogs(callsTo("load")).verify(happenedExactly(1));
+        view.getLogs(callsTo("unload")).verify(neverHappened);
+      });
     });
 
     test('checked unsuscribing data', () {
@@ -230,9 +235,49 @@ void main() {
 
       data['param'] = 'vacuumcleaner';
     });
+
+    test('navigate to same view with different routes', () {
+      //given
+      var catRoute = new Route("/cat/{param}/");
+      var dogRoute = new Route("/dog/{param}/");
+      var dogParams = {"param":"doggy"};
+      var dogPath = dogRoute.path(dogParams);
+
+      var view = new SpyView();
+      var history = new Mock();
+
+      var navigator = new PageNavigator(new Router("host", {
+        "cat" : catRoute,
+        "dog" : dogRoute})
+      , history);
+
+      navigator.registerView("cat", view);
+      navigator.registerView("dog", view);
+      navigator.navigate("cat", {"param":"kitty"});
+
+      //when
+      navigator.navigate("dog", dogParams);
+
+      //then
+      return new Future.delayed(new Duration(milliseconds: 100), (){
+        expect(navigator.activePath, equals(dogPath));
+
+        //history state
+        //3 for navigate(old) and navigate(new) and data.onChange
+        history.getLogs(callsTo("replaceState")).verify(happenedExactly(3));
+        //last path is dogPath
+        expect(history.getLogs(callsTo('replaceState')).last.args[2], equals(dogPath));
+
+        //view data state
+        expect(view._real.data['param'], equals('doggy'));
+        expect(view._real.data['_routeName'], equals('dog'));
+        //no more load/unload for view
+        view.getLogs(callsTo("load")).verify(happenedExactly(1));
+        view.getLogs(callsTo("unload")).verify(neverHappened);
+      });
+    });
   });
 }
-
 
 
 
