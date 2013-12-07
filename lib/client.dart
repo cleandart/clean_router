@@ -59,7 +59,11 @@ class PageNavigator {
   View _activeView;
   View _defaultView;
 
+  get activeView => _activeView;
+  get activeRouteName => _activeRouteName;
+
   String activePath = null;
+
 
 /**
  * Creates new [PageNavigator].
@@ -105,17 +109,20 @@ class PageNavigator {
     // Param names starting with underscored are reserved in [Route]
     parameters[PARAM_ROUTE_NAME] = routeName;
 
-    if (_activeView != _views[routeName]) {
+    var oldView = _activeView;
+    _activeView = _views[routeName];
+    _activeRouteName = routeName;
+
+    if (oldView != _activeView) {
       _setActiveParameters(parameters);
-      _handleViewTransition(_activeView, _views[routeName]);
+      _handleViewTransition(oldView, _activeView);
     }
+
     else {
       _activeParameters.removeAll(_activeParameters.keys.toList());
       _activeParameters.addAll(parameters);
     }
 
-    _activeView = _views[routeName];
-    _activeRouteName = routeName;
 
     //== update history
     if (pushState) {

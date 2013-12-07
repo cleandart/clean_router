@@ -105,6 +105,30 @@ void main() {
       expect(view.getLogs().first.args.first['_routeName'], equals('route'));
     });
 
+    test('re-navigation during view.load action used to cause troubles', () {
+      //given
+      var router = new MockRouter();
+      router.when(callsTo("routePath", "routeA")).alwaysReturn("/route/a/");
+      router.when(callsTo("routePath", "routeB")).alwaysReturn("/route/b/");
+      var viewA = new MockView();
+      var viewB = new SpyView();
+      var pageNavigator = new PageNavigator(router, new Mock());
+      pageNavigator.registerView("routeA", viewA);
+      pageNavigator.registerView("routeB", viewB);
+      viewA.when(callsTo('load')).thenCall(
+        (data){
+          pageNavigator.navigate("routeB", {});
+        }
+      );
+
+      //when
+      pageNavigator.navigate("routeA", {});
+
+      //then
+      expect(pageNavigator.activePath, equals("/route/b/"));
+
+    });
+
     test('navigate to non existing path leads to invoking defaultView.', () {
       // given
       var router = new Router(null,{});
@@ -118,7 +142,6 @@ void main() {
 
       // then
       expect(pageNavigator.activePath, equals("/dummy/url/"));
-
       view.getLogs(callsTo('load')).verify(happenedOnce);
     });
 
