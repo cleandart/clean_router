@@ -1,14 +1,13 @@
 name: clean_router
 version: 0.1.2
-authors:
-- Samuel Hapák <samuel.hapak@vacuumapps.com>
-- Peter Csiba <petherz@gmail.com>
-- Jozef Brandys <jozef.brandys@gmail.com>
-description: Routing requests both on client and server side.
+author: Clean Team <clean@vacuumlabs.com>
+description: Routing library used in clean framework.
 homepage: https://github.com/cleandart/clean_router
+documentation: https://github.com/cleandart/clean_router
 dependencies:
   browser: any
   clean_data:
     git: https://github.com/cleandart/clean_data
 dev_dependencies:
+  hop: any
   unittest: any
