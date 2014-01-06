@@ -5,9 +5,8 @@ description: Routing library used in clean framework.
 homepage: https://github.com/cleandart/clean_router
 documentation: https://github.com/cleandart/clean_router
 dependencies:
-  browser: any
-  clean_data:
-    git: https://github.com/cleandart/clean_data
+  browser: '>=0.9.0 <0.10.0'
+  clean_data: '>=0.2.0 <0.3.0'
 dev_dependencies:
   hop: any
   unittest: any
