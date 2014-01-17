@@ -21,7 +21,7 @@ abstract class View {
    * From the other side [PageNavigator] listens to each [data] change of [View].
    * See [PageNavigator.navigate] for more.
    */
-  void load(Data data);
+  void load(DataMap data);
 
   /**
    * Called when [PageNavigator] decides this [View] is no more necessary/to be displayed.
@@ -49,7 +49,7 @@ class PageNavigator {
    * What is active.
    */
   String _activeRouteName;
-  Data _activeParameters;
+  DataMap _activeParameters;
 
   /**
    * Subsription to Data shared with actual View.
@@ -174,7 +174,7 @@ class PageNavigator {
     if(_dataSubscription != null) {
       _dataSubscription.cancel();
     }
-    var data = new Data.from(parameters);
+    var data = new DataMap.from(parameters);
     _activeParameters = data;
     _dataSubscription = _activeParameters.onChange.listen(
         (ChangeSet change) => _updateHistoryState());

@@ -12,8 +12,8 @@ import '../lib/client.dart';
 
 // Spy for View
 class DummyView implements View {
-  Data data = null;
-  void load(Data data) {
+  DataMap data = null;
+  void load(DataMap data) {
     this.data = data;
   }
   void unload() {
@@ -75,7 +75,7 @@ void main() {
       router.getLogs(callsTo('routePath')).verify(happenedAtLeastOnce);
       var args = router.getLogs(callsTo('routePath')).first.args;
       expect(args[0], equals('static'));
-      expect(args[1], new isInstanceOf<Data>());
+      expect(args[1], new isInstanceOf<DataMap>());
 
       history.getLogs(callsTo('replaceState')).verify(happenedOnce);
 
