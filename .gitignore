@@ -4,3 +4,4 @@ lib/todo.dart
 pubspec.lock
 .buildlog
 out/
+local_pubspec_yaml
