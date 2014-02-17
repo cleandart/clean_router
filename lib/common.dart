@@ -18,7 +18,7 @@ class Route {
   List _urlParts = [];
   bool _anyTail = false;
 
-  get absolute => _absolutePart.isNotEmpty;
+  get isAbsolute => _absolutePart.isNotEmpty;
 
   /**
    * Constructs [Route] using [String] pattern.
@@ -138,7 +138,7 @@ class Route {
       parts.removeLast();
       parts.add(args[PARAM_TAIL]);
     }
-    return parts.join('/');
+    return _absolutePart + parts.join('/');
   }
 }
 
@@ -190,7 +190,8 @@ class Router {
    * [parameters]. Accepts both [Map] and [Data] as [parameters].
    */
   String routeUrl(String routeName, dynamic parameters) {
-    return this._host + this.routePath(routeName, parameters);
+    String path = this.routePath(routeName, parameters);
+    return this._routes[routeName].isAbsolute ? path : this._host + path;
   }
 
   /**
