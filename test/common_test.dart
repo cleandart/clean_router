@@ -22,6 +22,8 @@ int main(){
       expect(() => new Route("/{more-brackets}}/"),      throwsFormatException);
       expect(() => new Route("/{more-asterisks}/**"),      throwsFormatException);
       expect(() => new Route("/{_cannot-start-with-underscore}/"), throwsFormatException);
+      expect(() => new Route("http://not_ending-with-slash.com"), throwsFormatException);
+      expect(() => new Route("http://not_ending-with-slash.com/{#invalidPatternPart}"), throwsFormatException);
     });
 
     test('supported format', () {
@@ -32,65 +34,155 @@ int main(){
       expect(new Route("/{anything-here4!@#\$%^&*()\\\n}/"), isNot(isException));
       expect(new Route("/anytail/*"), isNot(isException));
       expect(new Route("/{-__underscores-ok-if-not-first}/*"), isNot(isException));
+      expect(new Route("http://absolutePath/"), isNot(isException));
+      expect(new Route("http://absolutePath/index.html/"), isNot(isException));
+      expect(new Route("http://absolutePath/{anything-here4!@#\$%^&*()\\\n}/"), isNot(isException));
+      expect(new Route("http://example//////////"), isNot(isException));
     });
 
-    test('matching - static not match', () {
-      // given
-      var route = new Route("/route/");
+    group('(relative)', () {
+      test('matching - static not match', () {
+        // given
+        var route = new Route("/route/");
 
-      // when
-      var match = route.match("/other/");
+        // when
+        var match = route.match("/other/");
 
-      // then
-      expect(match, isNull);
+        // then
+        expect(route.absolute, isFalse);
+        expect(match, isNull);
+      });
+
+      test('matching - static not match any tail', () {
+        // given
+        var route = new Route("/route/");
+
+        // when
+        var match = route.match("/route/subpath");
+
+        // then
+        expect(route.absolute, isFalse);
+        expect(match, isNull);
+      });
+
+      test('matching - static match', () {
+        // given
+        var route = new Route("/route/");
+
+        // when
+        var match = route.match("/route/");
+
+        // then
+        expect(route.absolute, isFalse);
+        expect(match, equals({}));
+      });
+
+      test('matching - one parameter match', () {
+        // given
+        var route = new Route("/route/{param}/");
+
+        // when
+        var match = route.match("/route/value/");
+
+        // then
+        expect(route.absolute, isFalse);
+        expect(match, equals({"param" : "value"}));
+      });
+
+      test('matching - several parameter match', () {
+        // given
+        var route = new Route("/route/{param1}/name/{param2}/{param3}/");
+
+        // when
+        var match = route.match("/route/value1/name/value2/value3/");
+
+        // then
+        expect(route.absolute, isFalse);
+        expect(match, equals({
+          "param1" : "value1",
+          "param2" : "value2",
+          "param3" : "value3",
+        }));
+      });
     });
 
-    test('matching - static not match any tail', () {
-      // given
-      var route = new Route("/route/");
+    group('(absolute)', () {
+      test('matching - absolute url', () {
+        // given
+        var route = new Route("http://new.example.com/");
+        var route2 = new Route("http://new.example.com/");
+        // when
+        var match = route.match("http://new.example.com/");
+        var match2 = route2.match("http://example/");
+        // then
+        expect(match, equals({}));
+        expect(match2, isNull);
+        expect(route.absolute, isTrue);
+      });
 
-      // when
-      var match = route.match("/route/subpath");
+      test('matching - static not match', () {
+        // given
+        var route = new Route("http://example.com/route/");
 
-      // then
-      expect(match, isNull);
-    });
+        // when
+        var match = route.match("http://example.com/other/");
 
-    test('matching - static match', () {
-      // given
-      var route = new Route("/route/");
+        // then
+        expect(route.absolute, isTrue);
+        expect(match, isNull);
+      });
 
-      // when
-      var match = route.match("/route/");
+      test('matching - static not match any tail', () {
+        // given
+        var route = new Route("http://example.com/route/");
 
-      // then
-      expect(match, equals({}));
-    });
+        // when
+        var match = route.match("http://example.com/route/subpath");
 
-    test('matching - one parameter match', () {
-      // given
-      var route = new Route("/route/{param}/");
+        // then
+        expect(route.absolute, isTrue);
+        expect(match, isNull);
+      });
 
-      // when
-      var match = route.match("/route/value/");
+      test('matching - static match', () {
+        // given
+        var route = new Route("http://example.com/route/");
 
-      // then
-      expect(match, equals({"param" : "value"}));
-    });
+        // when
+        var match = route.match("http://example.com/route/");
 
-    test('matching - several parameter match', () {
-      // given
-      var route = new Route("/route/{param1}/name/{param2}/{param3}/");
+        // then
+        expect(route.absolute, isTrue);
+        expect(match, equals({}));
+      });
 
-      // when
-      var match = route.match("/route/value1/name/value2/value3/");
+      test('matching - one parameter match', () {
+        // given
+        var route = new Route("http://example.com/route/{param}/");
 
-      // then
-      expect(match, equals({
-        "param1" : "value1",
-        "param2" : "value2",
-        "param3" : "value3",
-      }));
+        // when
+        var match = route.match("http://example.com/route/value/");
+
+        // then
+        expect(route.absolute, isTrue);
+        expect(match, equals({"param" : "value"}));
+      });
+
+      test('matching - several parameter match', () {
+        // given
+        var route = new Route("http://example.com/route/{param1}/name/{param2}/{param3}/");
+
+        // when
+        var match = route.match("http://example.com/route/value1/name/value2/value3/");
+
+        // then
+        expect(route.absolute, isTrue);
+        expect(match, equals({
+          "param1" : "value1",
+          "param2" : "value2",
+          "param3" : "value3",
+        }));
+      });
     });
 
     test('generation - two params', () {

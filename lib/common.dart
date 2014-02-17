@@ -13,13 +13,17 @@ const PARAM_TAIL = '_tail';
  */
 class Route {
   RegExp _matchExp;
+  String _absolutePart = '';
   List<String> _variables = [];
   List _urlParts = [];
   bool _anyTail = false;
 
+  get absolute => _absolutePart.isNotEmpty;
+
   /**
    * Constructs [Route] using [String] pattern.
    *
+   * Url is dividid into absolute and patter part.
    * Pattern is divided to parts by slash '/' character. The slash must be the
    * very first character of the pattern. Each part can be either static or
    * placeholder. Static part can contain arbitrary number of [a-zA-Z0-9_-]
@@ -28,7 +32,20 @@ class Route {
    * with the first character being not an underscore.
    */
 
-  Route(String pattern) {
+  Route(String url) {
+    String pattern;
+    if(url.startsWith('http://')) {
+      int endOfAbsolutePart = url.indexOf('/', 7);
+      if(endOfAbsolutePart == -1) {
+        throw new FormatException('Absolute Url pattern has to have pattern part');
+      }
+      _absolutePart = url.substring(0, endOfAbsolutePart);
+      pattern = url.substring(endOfAbsolutePart);
+    }
+    else {
+      pattern = url;
+    }
+
     if (pattern.isEmpty || pattern[0] != '/') {
       throw new FormatException("Url pattern has to begin with '/' character.");
     }
@@ -70,7 +87,7 @@ class Route {
       tailRegExp = r"(.*)";
     }
 
-    _matchExp = new RegExp(r"^" + matcherParts.join('/') + tailRegExp + r"$");
+    _matchExp = new RegExp(r"^" + _absolutePart + matcherParts.join('/') + tailRegExp + r"$");
   }
 
   /**
