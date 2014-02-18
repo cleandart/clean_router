@@ -12,7 +12,6 @@ int main(){
     test('unsupported format', () {
       expect(() => new Route(""), throwsFormatException);
       expect(() => new Route("not-starting-with-slash/"),throwsFormatException);
-      expect(() => new Route("/not-ending-with-slash"),  throwsFormatException);
       expect(() => new Route("/#some-chars-not-allowed/"),throwsFormatException);
       expect(() => new Route("/?some-chars-not-allowed/"),throwsFormatException);
       expect(() => new Route("/!some-chars-not-allowed/"),throwsFormatException);
@@ -22,22 +21,25 @@ int main(){
       expect(() => new Route("/{more-brackets}}/"),      throwsFormatException);
       expect(() => new Route("/{more-asterisks}/**"),      throwsFormatException);
       expect(() => new Route("/{_cannot-start-with-underscore}/"), throwsFormatException);
-      expect(() => new Route("http://not_ending-with-slash.com"), throwsFormatException);
-      expect(() => new Route("http://not_ending-with-slash.com/{#invalidPatternPart}"), throwsFormatException);
+      expect(() => new Route("http://does-not-have-pattern-part.com"), throwsFormatException);
+      expect(() => new Route("http://not_ending-with-slash.com/#invalidPatternPart/"), throwsFormatException);
     });
 
     test('supported format', () {
       expect(new Route("/"), isNot(isException));
       expect(new Route("//"), isNot(isException));
       expect(new Route("/index.html/"), isNot(isException));
+      expect(new Route("/index.html"), isNot(isException));
       expect(new Route("////////////////////////"), isNot(isException));
       expect(new Route("/{anything-here4!@#\$%^&*()\\\n}/"), isNot(isException));
       expect(new Route("/anytail/*"), isNot(isException));
       expect(new Route("/{-__underscores-ok-if-not-first}/*"), isNot(isException));
       expect(new Route("http://absolutePath/"), isNot(isException));
-      expect(new Route("http://absolutePath/index.html/"), isNot(isException));
+      expect(new Route("http://absolutePath/index.html"), isNot(isException));
       expect(new Route("http://absolutePath/{anything-here4!@#\$%^&*()\\\n}/"), isNot(isException));
       expect(new Route("http://example//////////"), isNot(isException));
+      expect(new Route("/not-ending-with-slash"),  isNot(isException));
+      expect(new Route("http://example/{param}/not-ending-with-slash"),  isNot(isException));
     });
 
     group('(relative)', () {
@@ -67,10 +69,10 @@ int main(){
 
       test('matching - static match', () {
         // given
-        var route = new Route("/route/");
+        var route = new Route("/route/index.html");
 
         // when
-        var match = route.match("/route/");
+        var match = route.match("/route/index.html");
 
         // then
         expect(route.isAbsolute, isFalse);
@@ -91,10 +93,10 @@ int main(){
 
       test('matching - several parameter match', () {
         // given
-        var route = new Route("/route/{param1}/name/{param2}/{param3}/");
+        var route = new Route("/route/{param1}/name/{param2}/{param3}/img.jpg");
 
         // when
-        var match = route.match("/route/value1/name/value2/value3/");
+        var match = route.match("/route/value1/name/value2/value3/img.jpg");
 
         // then
         expect(route.isAbsolute, isFalse);
@@ -172,10 +174,10 @@ int main(){
 
       test('matching - one parameter match', () {
         // given
-        var route = new Route("http://example.com/route/{param}/");
+        var route = new Route("http://example.com/route/{param}/source.dart");
 
         // when
-        var match = route.match("http://example.com/route/value/");
+        var match = route.match("http://example.com/route/value/source.dart");
 
         // then
         expect(route.isAbsolute, isTrue);
@@ -216,13 +218,13 @@ int main(){
     group('generation relative', () {
       test('- two params', () {
         // given
-        var route = new Route("/route/{param1}/{param2}/");
+        var route = new Route("/route/{param1}/{param2}/source.dart");
 
         // when
         var path = route.path({'param1': 'value1', 'param2': 'value2'});
 
         // then
-        expect(path, equals('/route/value1/value2/'));
+        expect(path, equals('/route/value1/value2/source.dart'));
       });
 
       test('- not enough params', () {
@@ -327,6 +329,24 @@ int main(){
         "_tail" : "any-tail/value/something/anything",
       }));
       expect(match2, isNull);
+    });
+
+    test('match all with prefix', () {
+      // given
+      var route = new Route("/index*");
+
+      // when
+      var match = route.match("/index.html");
+      var match2 = route.match("/index.php");
+      var match3 = route.match("/main.php");
+      // then
+      expect(match, equals({
+        "_tail" : ".html",
+      }));
+      expect(match2, equals({
+        "_tail" : ".php",
+      }));
+      expect(match3, isNull);
     });
   });
 
