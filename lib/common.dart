@@ -13,7 +13,7 @@ const PARAM_TAIL = '_tail';
  */
 class Route {
   RegExp _matchExp;
-  String _absolutePart = '', _endsWithSlash;
+  String _absolutePart = '';
   List<String> _variables = [];
   List _urlParts = [];
   bool _anyTail = false;
@@ -52,10 +52,6 @@ class Route {
     if(pattern[pattern.length - 1] == '*'){
       _anyTail = true;
       pattern = pattern.substring(0, pattern.length - 1);
-    }
-
-    if (pattern[pattern.length - 1] == '/') {
-      _endsWithSlash = '/';
     }
 
     RegExp exp = new RegExp(r"^(?:([\w-.]*)|{([^_{}][^{}]*)})$");
