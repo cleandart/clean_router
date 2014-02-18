@@ -13,13 +13,17 @@ const PARAM_TAIL = '_tail';
  */
 class Route {
   RegExp _matchExp;
+  String _absolutePart = '';
   List<String> _variables = [];
   List _urlParts = [];
   bool _anyTail = false;
 
+  get isAbsolute => _absolutePart.isNotEmpty;
+
   /**
    * Constructs [Route] using [String] pattern.
    *
+   * Url is dividid into absolute and patter part.
    * Pattern is divided to parts by slash '/' character. The slash must be the
    * very first character of the pattern. Each part can be either static or
    * placeholder. Static part can contain arbitrary number of [a-zA-Z0-9_-]
@@ -28,17 +32,26 @@ class Route {
    * with the first character being not an underscore.
    */
 
-  Route(String pattern) {
+  Route(String url) {
+    String pattern;
+    if(url.startsWith(new RegExp(r'^(ht|f)tp(s?)://'))) {
+      int endOfAbsolutePart = url.indexOf('/', url.indexOf('://') + 3);
+      if(endOfAbsolutePart == -1) {
+        throw new FormatException('Absolute Url pattern has to have pattern part');
+      }
+      _absolutePart = url.substring(0, endOfAbsolutePart);
+      pattern = url.substring(endOfAbsolutePart);
+    }
+    else {
+      pattern = url;
+    }
+
     if (pattern.isEmpty || pattern[0] != '/') {
       throw new FormatException("Url pattern has to begin with '/' character.");
     }
     if(pattern[pattern.length - 1] == '*'){
       _anyTail = true;
       pattern = pattern.substring(0, pattern.length - 1);
-    }
-
-    if (pattern[pattern.length - 1] != '/') {
-      throw new FormatException("Url pattern has to end with '/' or '/*' characters.");
     }
 
     RegExp exp = new RegExp(r"^(?:([\w-.]*)|{([^_{}][^{}]*)})$");
@@ -70,7 +83,7 @@ class Route {
       tailRegExp = r"(.*)";
     }
 
-    _matchExp = new RegExp(r"^" + matcherParts.join('/') + tailRegExp + r"$");
+    _matchExp = new RegExp(r"^" + _absolutePart + matcherParts.join('/') + tailRegExp + r"$");
   }
 
   /**
@@ -121,7 +134,7 @@ class Route {
       parts.removeLast();
       parts.add(args[PARAM_TAIL]);
     }
-    return parts.join('/');
+    return _absolutePart + parts.join('/');
   }
 }
 
@@ -173,7 +186,8 @@ class Router {
    * [parameters]. Accepts both [Map] and [Data] as [parameters].
    */
   String routeUrl(String routeName, dynamic parameters) {
-    return this._host + this.routePath(routeName, parameters);
+    String path = this.routePath(routeName, parameters);
+    return this._routes[routeName].isAbsolute ? path : this._host + path;
   }
 
   /**
