@@ -34,8 +34,8 @@ class Route {
 
   Route(String url) {
     String pattern;
-    if(url.startsWith('http://')) {
-      int endOfAbsolutePart = url.indexOf('/', 7);
+    if(url.startsWith(new RegExp(r'^(ht|f)tp(s?)://'))) {
+      int endOfAbsolutePart = url.indexOf('/', url.indexOf('://') + 3);
       if(endOfAbsolutePart == -1) {
         throw new FormatException('Absolute Url pattern has to have pattern part');
       }

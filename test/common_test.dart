@@ -23,6 +23,7 @@ int main(){
       expect(() => new Route("/{_cannot-start-with-underscore}/"), throwsFormatException);
       expect(() => new Route("http://does-not-have-pattern-part.com"), throwsFormatException);
       expect(() => new Route("http://not_ending-with-slash.com/#invalidPatternPart/"), throwsFormatException);
+      expect(() => new Route("else://example/{param}/not-ending-with-slash"), throwsFormatException);
     });
 
     test('supported format', () {
@@ -40,6 +41,8 @@ int main(){
       expect(new Route("http://example//////////"), isNot(isException));
       expect(new Route("/not-ending-with-slash"),  isNot(isException));
       expect(new Route("http://example/{param}/not-ending-with-slash"),  isNot(isException));
+      expect(new Route("https://example/{param}/not-ending-with-slash"),  isNot(isException));
+      expect(new Route("ftp://example/{param}/not-ending-with-slash"),  isNot(isException));
     });
 
     group('(relative)', () {
