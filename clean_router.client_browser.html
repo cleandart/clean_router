@@ -1,0 +1,99 @@
+        <!DOCTYPE html>
+        <html>
+        <head>
+                <meta charset="utf-8">
+        <title>clean_router.client_browser Library / Dart Documentation</title>
+        <link rel="stylesheet" type="text/css"
+            href="styles.css">
+        <link href="//fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet" type="text/css">
+        <link rel="shortcut icon" href="favicon.ico">
+        
+        </head>
+        <body data-library="clean_router.client_browser">
+        <div class="page">
+        <div class="header">
+          <a href="index.html"><div class="logo"></div></a>
+          <a href="index.html">Dart Documentation</a>
+         &rsaquo; <a href="clean_router.client_browser.html">clean_router.client_browser</a>        <div id="search-box">
+          <input type="search" name="q" id="q" autocomplete="off"
+              class="search-input" placeholder="Search API">
+        </div>
+        
+      </div>
+      <div class="drop-down" id="drop-down"></div>
+      
+        <div class="nav">
+        
+</div>
+<div class="content">
+<h2><strong>clean_router.client_browser</strong> library</h2>
+<h3>Exports</h3>
+<ul>
+<ul><a href="clean_router.client.html">clean_router.client</a></ul>
+<ul><a href="clean_router.common.html">clean_router.common</a></ul>
+</ul>
+<div>
+<h3>Functions</h3>
+<div class="method"><h4 id="createPageNavigator">
+<button class="show-code">Code</button>
+<a href="clean_router.client/PageNavigator.html">PageNavigator</a> <strong>createPageNavigator</strong>() <a class="anchor-link" href="#createPageNavigator"
+              title="Permalink to createPageNavigator">#</a></h4>
+<div class="doc">
+<pre class="source">
+PageNavigator createPageNavigator() {
+ var location = window.location;
+ var urlPrefix = "${location.protocol}//${location.host}";
+ var router = new Router(urlPrefix, {});
+
+ var history = History.supportsState ? window.history : new HashHistory();
+ var navigator = new PageNavigator(router, history);
+ Timer.run(() {
+     var path = window.location.pathname;
+     path += path.endsWith('/') ? '' : '/';
+     navigator.navigateToPath(path, pushState: false);
+ });
+
+ (window.document as HtmlDocument).body.onClick.matches('a[href]').listen((Event event) {
+   var a = event.matchingTarget as AnchorElement;
+   var href = a.href;
+
+   if (a.protocol == window.location.protocol &amp;&amp; a.host == window.location.host) {
+     event.preventDefault();
+     navigator.navigateToPath(a.pathname, pushState: true);
+   }
+ });
+
+ if (History.supportsState) {
+   window.onPopState.listen((PopStateEvent event) {
+     navigator.navigateToPath(window.location.pathname, pushState: false);
+   });
+ } else {
+   window.onHashChange.listen((event) {
+     navigator.navigateToPath(window.location.hash.substring(1), pushState: false);
+   });
+ }
+
+ return navigator;
+}
+</pre>
+</div>
+</div>
+</div>
+<div>
+<h3>Classes</h3>
+          <div class="type">
+          <h4>
+            <a href="clean_router.client_browser/HashHistory.html"><strong>HashHistory</strong></a>
+          </h4>
+          </div>
+          
+</div>
+        </div>
+        <div class="clear"></div>
+        </div>
+        <div class="footer">
+          
+        </div>
+        <script async src="client-live-nav.js"></script>
+        </body></html>
+        

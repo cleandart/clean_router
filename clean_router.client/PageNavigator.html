@@ -1,0 +1,407 @@
+        <!DOCTYPE html>
+        <html>
+        <head>
+                <meta charset="utf-8">
+        <title>PageNavigator class / clean_router.client Library / Dart Documentation</title>
+        <link rel="stylesheet" type="text/css"
+            href="../styles.css">
+        <link href="//fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet" type="text/css">
+        <link rel="shortcut icon" href="../favicon.ico">
+        
+        </head>
+        <body data-library="clean_router.client" data-type="PageNavigator">
+        <div class="page">
+        <div class="header">
+          <a href="../index.html"><div class="logo"></div></a>
+          <a href="../index.html">Dart Documentation</a>
+         &rsaquo; <a href="../clean_router.client.html">clean_router.client</a> &rsaquo; <a href="../clean_router.client/PageNavigator.html">PageNavigator</a>        <div id="search-box">
+          <input type="search" name="q" id="q" autocomplete="off"
+              class="search-input" placeholder="Search API">
+        </div>
+        
+      </div>
+      <div class="drop-down" id="drop-down"></div>
+      
+        <div class="nav">
+        
+</div>
+<div class="content">
+        <h2><strong>PageNavigator</strong>
+          class
+        </h2>
+        
+<button id="show-inherited" class="show-inherited">Hide inherited</button>
+<div class="doc">
+<p><a class="crossref" href="../clean_router.client/PageNavigator.html">PageNavigator</a> wires together <code>History</code> management, <a class="crossref" href="../clean_router.common/Route.html">Route</a> matching and
+<a class="crossref" href="../clean_router.client/View.html">View</a> rendering. It manages url addresses and bind them to views.
+It updates url (replaceState, pushState) if the url params are changed in the view.</p>
+<pre class="source">
+class PageNavigator {
+
+
+ final Router router;
+
+ /**
+  * History object of the browser.
+  */
+ final dynamic _history;
+
+ /**
+  * What is active.
+  */
+ String _activeRouteName;
+ DataMap _activeParameters;
+
+ /**
+  * Subsription to Data shared with actual View.
+  */
+ StreamSubscription _dataSubscription;
+ final Map _views = {};
+ View _activeView;
+ View _defaultView;
+
+ get activeView =&gt; _activeView;
+ get activeRouteName =&gt; _activeRouteName;
+
+ String activePath = null;
+
+
+/**
+* Creates new [PageNavigator].
+*/
+ PageNavigator(this.router, this._history);
+
+/**
+* Registeres a [view] for a particular [Route] identified by [routeName] in [Router].
+* It is not allowed to override already registered view.
+*/
+ void registerView(String routeName, View view) {
+   if(_views.containsKey(routeName)) {
+     throw new ArgumentError("Route name '$routeName' already in use in PageNavigator.");
+   }
+
+   _views[routeName] = view;
+ }
+
+/**
+* Registers a [View] which is called when router does not find any match.
+*/
+ void registerDefaultView(View view) {
+   _defaultView = view;
+ }
+
+/**
+* Navigates the browser to the selected route with given [data].
+* Then a [View] is selected and [Data] passed via updates are communicated.
+* So when [View] changes [Data] then [PageNavigator] changes [History] url.
+* Vice versa when client navigates to active route only [Data] is updated
+* and [View.load] and [View.unload] is not called. Therefore [View] should
+* listen to [Data] changes.
+*
+* Use flag [pushState] to push the new url to browser history.
+*/
+ void navigate(String routeName, Map parameters, {bool pushState: false}) {
+   //== prepare variables
+
+   if(!_views.containsKey(routeName)) {
+     throw new ArgumentError("View not found for '$routeName'");
+   }
+
+   // Param names starting with underscored are reserved in [Route]
+   parameters[PARAM_ROUTE_NAME] = routeName;
+
+   var oldView = _activeView;
+   _activeView = _views[routeName];
+   _activeRouteName = routeName;
+
+   if (oldView != _activeView) {
+     _setActiveParameters(parameters);
+     _handleViewTransition(oldView, _activeView);
+   }
+
+   else {
+     _activeParameters.removeAll(_activeParameters.keys.toList());
+     _activeParameters.addAll(parameters);
+   }
+
+
+   //== update history
+   if (pushState) {
+     this.pushState();
+   }
+   else {
+     _updateHistoryState();
+   }
+ }
+
+
+/**
+*  Navigates the browser to the selected Path using [navigate] function.
+*/
+ void navigateToPath(String path, {bool pushState: false}) {
+   var routeInfo = router.match(path);
+   if(routeInfo != null) {
+     navigate(routeInfo[0], routeInfo[1], pushState: pushState);
+   }
+   else {
+     _setActiveParameters({});
+     _handleViewTransition(_activeView, _defaultView);
+     _activeView = _defaultView ;
+     activePath = path;
+
+     if (pushState) {
+       this.pushState();
+     }
+     else {
+       _updateHistoryState();
+     }
+   }
+ }
+
+ void _recalculateActivePath() {
+   if(_activeView != _defaultView) {
+     activePath = router.routePath(_activeRouteName, _activeParameters);
+   }
+ }
+
+ void _handleViewTransition(View oldView, View newView) {
+   if (oldView != null) {
+     oldView.unload();
+   }
+   newView.load(_activeParameters);
+ }
+
+ void _setActiveParameters(Map parameters) {
+   if(_dataSubscription != null) {
+     _dataSubscription.cancel();
+   }
+   var data = new DataMap.from(parameters);
+   _activeParameters = data;
+   _dataSubscription = _activeParameters.onChange.listen(
+       (ChangeSet change) =&gt; _updateHistoryState());
+ }
+
+ void _updateHistoryState() {
+   _recalculateActivePath();
+   _history.replaceState({}, "", activePath);
+ }
+
+/**
+* Pushes the current state.
+* Should be called from [View] when [View] considers it necessary after block of [Data] changes.
+* Note that [Data].onChange callback is called in PageNavigator
+*   it will only call [_history.replaceState] which will do no harm.
+*/
+ void pushState() {
+   _recalculateActivePath();
+   this._history.pushState({}, "", activePath);
+ }
+}
+</pre>
+</div>
+<div>
+<h3>Constructors</h3>
+<div class="method"><h4 id="">
+<button class="show-code">Code</button>
+new <strong>PageNavigator</strong>(<a href="../clean_router.common/Router.html">Router</a> router, _history) <a class="anchor-link" href="#"
+              title="Permalink to PageNavigator.PageNavigator">#</a></h4>
+<div class="doc">
+<p>Creates new <a class="crossref" href="../clean_router.client/PageNavigator.html">PageNavigator</a>.</p>
+<pre class="source">
+PageNavigator(this.router, this._history);
+</pre>
+</div>
+</div>
+</div>
+<div>
+<h3>Properties</h3>
+<div class="field"><h4 id="activePath">
+<button class="show-code">Code</button>
+<a href="http://api.dartlang.org/dart_core/String.html" ref="external">String</a>         <strong>activePath</strong> <a class="anchor-link"
+            href="#activePath"
+            title="Permalink to PageNavigator.activePath">#</a>
+        </h4>
+        <div class="doc">
+<pre class="source">
+String activePath = null
+</pre>
+</div>
+</div>
+<div class="field"><h4 id="activeRouteName">
+<button class="show-code">Code</button>
+final         <strong>activeRouteName</strong> <a class="anchor-link"
+            href="#activeRouteName"
+            title="Permalink to PageNavigator.activeRouteName">#</a>
+        </h4>
+        <div class="doc">
+<pre class="source">
+get activeRouteName =&gt; _activeRouteName;
+</pre>
+</div>
+</div>
+<div class="field"><h4 id="activeView">
+<button class="show-code">Code</button>
+final         <strong>activeView</strong> <a class="anchor-link"
+            href="#activeView"
+            title="Permalink to PageNavigator.activeView">#</a>
+        </h4>
+        <div class="doc">
+<pre class="source">
+get activeView =&gt; _activeView;
+</pre>
+</div>
+</div>
+<div class="field"><h4 id="router">
+<button class="show-code">Code</button>
+final <a href="../clean_router.common/Router.html">Router</a>         <strong>router</strong> <a class="anchor-link"
+            href="#router"
+            title="Permalink to PageNavigator.router">#</a>
+        </h4>
+        <div class="doc">
+<pre class="source">
+final Router router
+</pre>
+</div>
+</div>
+</div>
+<div>
+<h3>Methods</h3>
+<div class="method"><h4 id="navigate">
+<button class="show-code">Code</button>
+void <strong>navigate</strong>(<a href="http://api.dartlang.org/dart_core/String.html" ref="external">String</a> routeName, <a href="http://api.dartlang.org/dart_core/Map.html" ref="external">Map</a> parameters, {<a href="http://api.dartlang.org/dart_core/bool.html" ref="external">bool</a> pushState: false}) <a class="anchor-link" href="#navigate"
+              title="Permalink to PageNavigator.navigate">#</a></h4>
+<div class="doc">
+<p>Navigates the browser to the selected route with given <code>data</code>.
+Then a <a class="crossref" href="../clean_router.client/View.html">View</a> is selected and <code>Data</code> passed via updates are communicated.
+So when <a class="crossref" href="../clean_router.client/View.html">View</a> changes <code>Data</code> then <a class="crossref" href="../clean_router.client/PageNavigator.html">PageNavigator</a> changes <code>History</code> url.
+Vice versa when client navigates to active route only <code>Data</code> is updated
+and <a class="crossref" href="../clean_router.client/View.html#load">View.load</a> and <a class="crossref" href="../clean_router.client/View.html#unload">View.unload</a> is not called. Therefore <a class="crossref" href="../clean_router.client/View.html">View</a> should
+listen to <code>Data</code> changes.</p>
+<p>Use flag 
+<span class="param">pushState</span> to push the new url to browser history.</p>
+<pre class="source">
+void navigate(String routeName, Map parameters, {bool pushState: false}) {
+ //== prepare variables
+
+ if(!_views.containsKey(routeName)) {
+   throw new ArgumentError("View not found for '$routeName'");
+ }
+
+ // Param names starting with underscored are reserved in [Route]
+ parameters[PARAM_ROUTE_NAME] = routeName;
+
+ var oldView = _activeView;
+ _activeView = _views[routeName];
+ _activeRouteName = routeName;
+
+ if (oldView != _activeView) {
+   _setActiveParameters(parameters);
+   _handleViewTransition(oldView, _activeView);
+ }
+
+ else {
+   _activeParameters.removeAll(_activeParameters.keys.toList());
+   _activeParameters.addAll(parameters);
+ }
+
+
+ //== update history
+ if (pushState) {
+   this.pushState();
+ }
+ else {
+   _updateHistoryState();
+ }
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="navigateToPath">
+<button class="show-code">Code</button>
+void <strong>navigateToPath</strong>(<a href="http://api.dartlang.org/dart_core/String.html" ref="external">String</a> path, {<a href="http://api.dartlang.org/dart_core/bool.html" ref="external">bool</a> pushState: false}) <a class="anchor-link" href="#navigateToPath"
+              title="Permalink to PageNavigator.navigateToPath">#</a></h4>
+<div class="doc">
+<p> Navigates the browser to the selected Path using <a class="crossref" href="../clean_router.client/PageNavigator.html#navigate">navigate</a> function.</p>
+<pre class="source">
+void navigateToPath(String path, {bool pushState: false}) {
+ var routeInfo = router.match(path);
+ if(routeInfo != null) {
+   navigate(routeInfo[0], routeInfo[1], pushState: pushState);
+ }
+ else {
+   _setActiveParameters({});
+   _handleViewTransition(_activeView, _defaultView);
+   _activeView = _defaultView ;
+   activePath = path;
+
+   if (pushState) {
+     this.pushState();
+   }
+   else {
+     _updateHistoryState();
+   }
+ }
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="pushState">
+<button class="show-code">Code</button>
+void <strong>pushState</strong>() <a class="anchor-link" href="#pushState"
+              title="Permalink to PageNavigator.pushState">#</a></h4>
+<div class="doc">
+<p>Pushes the current state.
+Should be called from <a class="crossref" href="../clean_router.client/View.html">View</a> when <a class="crossref" href="../clean_router.client/View.html">View</a> considers it necessary after block of <code>Data</code> changes.
+Note that <code>Data</code>.onChange callback is called in PageNavigator
+  it will only call [_history.replaceState] which will do no harm.</p>
+<pre class="source">
+void pushState() {
+ _recalculateActivePath();
+ this._history.pushState({}, "", activePath);
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="registerDefaultView">
+<button class="show-code">Code</button>
+void <strong>registerDefaultView</strong>(<a href="../clean_router.client/View.html">View</a> view) <a class="anchor-link" href="#registerDefaultView"
+              title="Permalink to PageNavigator.registerDefaultView">#</a></h4>
+<div class="doc">
+<p>Registers a <a class="crossref" href="../clean_router.client/View.html">View</a> which is called when router does not find any match.</p>
+<pre class="source">
+void registerDefaultView(View view) {
+ _defaultView = view;
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="registerView">
+<button class="show-code">Code</button>
+void <strong>registerView</strong>(<a href="http://api.dartlang.org/dart_core/String.html" ref="external">String</a> routeName, <a href="../clean_router.client/View.html">View</a> view) <a class="anchor-link" href="#registerView"
+              title="Permalink to PageNavigator.registerView">#</a></h4>
+<div class="doc">
+<p>Registeres a 
+<span class="param">view</span> for a particular <a class="crossref" href="../clean_router.common/Route.html">Route</a> identified by 
+<span class="param">routeName</span> in <a class="crossref" href="../clean_router.common/Router.html">Router</a>.
+It is not allowed to override already registered view.</p>
+<pre class="source">
+void registerView(String routeName, View view) {
+ if(_views.containsKey(routeName)) {
+   throw new ArgumentError("Route name '$routeName' already in use in PageNavigator.");
+ }
+
+ _views[routeName] = view;
+}
+</pre>
+</div>
+</div>
+</div>
+        </div>
+        <div class="clear"></div>
+        </div>
+        <div class="footer">
+          
+        </div>
+        <script async src="../client-live-nav.js"></script>
+        </body></html>
+        

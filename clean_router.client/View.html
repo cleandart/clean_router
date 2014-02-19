@@ -1,0 +1,87 @@
+        <!DOCTYPE html>
+        <html>
+        <head>
+                <meta charset="utf-8">
+        <title>View abstract class / clean_router.client Library / Dart Documentation</title>
+        <link rel="stylesheet" type="text/css"
+            href="../styles.css">
+        <link href="//fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet" type="text/css">
+        <link rel="shortcut icon" href="../favicon.ico">
+        
+        </head>
+        <body data-library="clean_router.client" data-type="View">
+        <div class="page">
+        <div class="header">
+          <a href="../index.html"><div class="logo"></div></a>
+          <a href="../index.html">Dart Documentation</a>
+         &rsaquo; <a href="../clean_router.client.html">clean_router.client</a> &rsaquo; <a href="../clean_router.client/View.html">View</a>        <div id="search-box">
+          <input type="search" name="q" id="q" autocomplete="off"
+              class="search-input" placeholder="Search API">
+        </div>
+        
+      </div>
+      <div class="drop-down" id="drop-down"></div>
+      
+        <div class="nav">
+        
+</div>
+<div class="content">
+        <h2><strong>View</strong>
+          abstract class
+        </h2>
+        
+<button id="show-inherited" class="show-inherited">Hide inherited</button>
+<div class="doc">
+<p><a class="crossref" href="../clean_router.client/View.html">View</a> is responsible for manipulating data received from server to be used for HTML.
+Methods of <a class="crossref" href="../clean_router.client/View.html">View</a> are called when <a class="crossref" href="../clean_router.client/PageNavigator.html">PageNavigator</a> matches the corresponding route
+  or when is navigated to different location.</p>
+<pre class="source">
+abstract class View {
+ /**
+  * Called when [PageNavigator] decides a new [View] should be used/displayed.
+  * [View] should listen do [data] changes.
+  * From the other side [PageNavigator] listens to each [data] change of [View].
+  * See [PageNavigator.navigate] for more.
+  */
+ void load(DataMap data);
+
+ /**
+  * Called when [PageNavigator] decides this [View] is no more necessary/to be displayed.
+  * Here the implementation should release all unnecessary resources.
+  */
+ void unload();
+}
+</pre>
+</div>
+<div>
+<h3>Methods</h3>
+<div class="method"><h4 id="load">
+abstract void <strong>load</strong>(<a href="../clean_data/DataMap.html">DataMap</a> data) <a class="anchor-link" href="#load"
+              title="Permalink to View.load">#</a></h4>
+<div class="doc">
+<p>Called when <a class="crossref" href="../clean_router.client/PageNavigator.html">PageNavigator</a> decides a new <a class="crossref" href="../clean_router.client/View.html">View</a> should be used/displayed.
+<a class="crossref" href="../clean_router.client/View.html">View</a> should listen do 
+<span class="param">data</span> changes.
+From the other side <a class="crossref" href="../clean_router.client/PageNavigator.html">PageNavigator</a> listens to each 
+<span class="param">data</span> change of <a class="crossref" href="../clean_router.client/View.html">View</a>.
+See <a class="crossref" href="../clean_router.client/PageNavigator.html#navigate">PageNavigator.navigate</a> for more.</p>
+</div>
+</div>
+<div class="method"><h4 id="unload">
+abstract void <strong>unload</strong>() <a class="anchor-link" href="#unload"
+              title="Permalink to View.unload">#</a></h4>
+<div class="doc">
+<p>Called when <a class="crossref" href="../clean_router.client/PageNavigator.html">PageNavigator</a> decides this <a class="crossref" href="../clean_router.client/View.html">View</a> is no more necessary/to be displayed.
+Here the implementation should release all unnecessary resources.</p>
+</div>
+</div>
+</div>
+        </div>
+        <div class="clear"></div>
+        </div>
+        <div class="footer">
+          
+        </div>
+        <script async src="../client-live-nav.js"></script>
+        </body></html>
+        
