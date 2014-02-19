@@ -1,6 +1,6 @@
 name: clean_router
 author: Clean Team <clean@vacuumlabs.com>
-version: 0.2.0
+version: 0.2.1
 homepage: https://github.com/cleandart/clean_router
 description: Routing library used in clean framework.
 documentation: https://github.com/cleandart/clean_router
