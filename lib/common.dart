@@ -56,7 +56,8 @@ class Route {
 
     var staticPart = r"([^{}]+)";
     var matcherPart = r"(\{[a-zA-Z0-9-][_a-zA-Z0-9-]*\})";
-    RegExp exp = new RegExp(r"^(" + staticPart + r"|" + matcherPart + r")*$");
+    var customMatcherPart = r"(\{[a-zA-Z0-9-][_a-zA-Z0-9-]*:[^{}]+\})";
+    RegExp exp = new RegExp(r"^(" + staticPart + r"|" + matcherPart + r"|" + customMatcherPart + r")*$");
     var match = exp.firstMatch(pattern);
     if (match == null) {
       throw new FormatException(
@@ -64,8 +65,17 @@ class Route {
            are allowed in the URL."""
       );
     }
+
+    bool hasCustomMatchPart = false;
+
     RegExp matcherPartExp = new RegExp(matcherPart);
     var matches = matcherPartExp.allMatches(pattern);
+
+    if (matches.isEmpty) {
+      matcherPartExp = new RegExp(customMatcherPart);
+      matches = matcherPartExp.allMatches(pattern);
+      hasCustomMatchPart = true;
+    }
 
     var matcherParts = new List();
     var start = 0;
@@ -82,8 +92,18 @@ class Route {
       addStatic(pattern.substring(start,  match.start));
       start = match.end;
 
-      var variableName = pattern.substring(match.start + 1, match.end - 1);
-      matcherParts.add("([^/]+)");
+      var variableName;
+
+      if (hasCustomMatchPart) {
+        int colonIndex = pattern.indexOf(":", match.start);
+        variableName = pattern.substring(match.start + 1, colonIndex);
+        var customMatcher = pattern.substring(colonIndex + 1, match.end - 1);
+        matcherParts.add("($customMatcher)");
+      } else {
+        variableName = pattern.substring(match.start + 1, match.end - 1);
+        matcherParts.add("([^/]+)");
+      }
+
       _variables.add(variableName);
       _urlParts.add({'value': variableName, 'isVariable': true});
 

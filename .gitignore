@@ -5,3 +5,5 @@ pubspec.lock
 .buildlog
 out/
 local_pubspec_yaml
+.idea
+.DS_Store

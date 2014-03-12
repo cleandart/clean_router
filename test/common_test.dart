@@ -21,6 +21,7 @@ int main(){
       expect(() => new Route("http://does-not-have-pattern-part.com"), throwsFormatException);
       expect(() => new Route("http://not_ending-with-slash.com/{#invalidpatternpart}/"), throwsFormatException);
       expect(() => new Route("else://example/{param}/not-ending-with-slash"), throwsFormatException);
+      expect(() => new Route("/{variableMatcherCantContainBrackets:{}}/"), throwsFormatException);
     });
 
     test('supported format', () {
@@ -39,6 +40,8 @@ int main(){
       expect(new Route("http://example/{param}/not-ending-with-slash"),  isNot(isException));
       expect(new Route("https://example/{param}/not-ending-with-slash"),  isNot(isException));
       expect(new Route("ftp://example/{param}/not-ending-with-slash"),  isNot(isException));
+      expect(new Route("/{variableMatcher:.*}/"), isNot(isException));
+
     });
 
     group('(relative)', () {
@@ -119,6 +122,48 @@ int main(){
           'filename': 'report',
           'ext': 'doc',
         }));
+      });
+
+      test('matching - one parameter with custom regular expression', () {
+        // given
+        var route = new Route("/route/{param:[a-z0-9]+}/");
+
+        // when
+        var match = route.match("/route/hello15/");
+
+        // then
+        expect(route.isAbsolute, isFalse);
+        expect(match, equals({"param" : "hello15"}));
+
+      });
+
+      test('matching - one parameter with custom regular expression and more url parts', () {
+        // given
+        var route = new Route("/route/{param:\\d+}/article/");
+
+        // when
+        var match = route.match("/route/15/article/");
+
+        // then
+        expect(route.isAbsolute, isFalse);
+        expect(match, equals({"param" : "15"}));
+
+      });
+
+      test('matching - several parameters with custom regular expression', () {
+        // given
+        var route = new Route("/route/{month:\\d+}/{day:[1-9][0-9]*}/");
+
+        // when
+        var match = route.match("/route/02/30/");
+
+        // then
+        expect(route.isAbsolute, isFalse);
+        expect(match, equals({
+            "month" : "02",
+            "day" : "30"
+        }));
+
       });
 
       test('match any tail', () {
