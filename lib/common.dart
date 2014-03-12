@@ -54,36 +54,49 @@ class Route {
       pattern = pattern.substring(0, pattern.length - 1);
     }
 
-    RegExp exp = new RegExp(r"^(?:([\w-.]*)|{([^_{}][^{}]*)})$");
+    var staticPart = r"([^{}]+)";
+    var matcherPart = r"(\{[a-zA-Z0-9-][_a-zA-Z0-9-]*\})";
+    RegExp exp = new RegExp(r"^(" + staticPart + r"|" + matcherPart + r")*$");
+    var match = exp.firstMatch(pattern);
+    if (match == null) {
+      throw new FormatException(
+          """Only alphanumeric characters, dash '-' and underscore '_'
+           are allowed in the URL."""
+      );
+    }
+    RegExp matcherPartExp = new RegExp(matcherPart);
+    var matches = matcherPartExp.allMatches(pattern);
 
     var matcherParts = new List();
-    var parts = pattern.split('/');
-    for (var part in parts) {
-      var match = exp.firstMatch(part);
-      if (match == null) {
-        throw new FormatException(
-            """Only alphanumeric characters, dash '-' and underscore '_'
-             are allowed in the URL."""
-        );
-      }
-      if (match.group(1) != null) {
-        var group = match.group(1);
-        matcherParts.add(group);
-        _urlParts.add({'value': group, 'isVariable': false});
-      } else {
-        var group = match.group(2);
-        matcherParts.add("([^/]*)");
-        _variables.add(group);
-        _urlParts.add({'value': group, 'isVariable': true});
+    var start = 0;
+    addStatic(static) {
+      if (static != '') {
+        matcherParts.add(static.replaceAllMapped(
+                    new RegExp(r"[.?*+^$[\]\\(){}|-]"), (c) => "\\${c.group(0)}")
+                    );
+        _urlParts.add({'value': static, 'isVariable': false});
       }
     }
+
+    for (var match in matches) {
+      addStatic(pattern.substring(start,  match.start));
+      start = match.end;
+
+      var variableName = pattern.substring(match.start + 1, match.end - 1);
+      matcherParts.add("([^/]+)");
+      _variables.add(variableName);
+      _urlParts.add({'value': variableName, 'isVariable': true});
+
+    }
+    addStatic(pattern.substring(start));
+
 
     var tailRegExp = r"";
     if(_anyTail){
       tailRegExp = r"(.*)";
     }
 
-    _matchExp = new RegExp(r"^" + _absolutePart + matcherParts.join('/') + tailRegExp + r"$");
+    _matchExp = new RegExp(r"^" + _absolutePart + matcherParts.join('') + tailRegExp + r"$");
   }
 
   /**
@@ -127,14 +140,14 @@ class Route {
         if (value == null) {
           throw new ArgumentError("Missing value for ${part['value']}.");
         }
+        value = Uri.encodeComponent(value);
       }
-      parts.add(Uri.encodeComponent(value));
+      parts.add(value);
     }
     if (_anyTail) {
-      parts.removeLast();
       parts.add(args[PARAM_TAIL]);
     }
-    return _absolutePart + parts.join('/');
+    return _absolutePart + parts.join('');
   }
 }
 

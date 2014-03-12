@@ -12,32 +12,28 @@ int main(){
     test('unsupported format', () {
       expect(() => new Route(""), throwsFormatException);
       expect(() => new Route("not-starting-with-slash/"),throwsFormatException);
-      expect(() => new Route("/#some-chars-not-allowed/"),throwsFormatException);
-      expect(() => new Route("/?some-chars-not-allowed/"),throwsFormatException);
-      expect(() => new Route("/!some-chars-not-allowed/"),throwsFormatException);
+      expect(() => new Route("/onlyalphanumeric/{#}/"), throwsFormatException);
       expect(() => new Route("/{not_closed/"),           throwsFormatException);
       expect(() => new Route("/not_open}/"),             throwsFormatException);
       expect(() => new Route("/{{more-brackets}/"),      throwsFormatException);
       expect(() => new Route("/{more-brackets}}/"),      throwsFormatException);
-      expect(() => new Route("/{more-asterisks}/**"),      throwsFormatException);
       expect(() => new Route("/{_cannot-start-with-underscore}/"), throwsFormatException);
       expect(() => new Route("http://does-not-have-pattern-part.com"), throwsFormatException);
-      expect(() => new Route("http://not_ending-with-slash.com/#invalidPatternPart/"), throwsFormatException);
+      expect(() => new Route("http://not_ending-with-slash.com/{#invalidpatternpart}/"), throwsFormatException);
       expect(() => new Route("else://example/{param}/not-ending-with-slash"), throwsFormatException);
     });
 
     test('supported format', () {
       expect(new Route("/"), isNot(isException));
       expect(new Route("//"), isNot(isException));
+      expect(new Route("/anything-here4!@#\$%^&*()\\\n/"),isNot(isException));
       expect(new Route("/index.html/"), isNot(isException));
       expect(new Route("/index.html"), isNot(isException));
       expect(new Route("////////////////////////"), isNot(isException));
-      expect(new Route("/{anything-here4!@#\$%^&*()\\\n}/"), isNot(isException));
       expect(new Route("/anytail/*"), isNot(isException));
       expect(new Route("/{-__underscores-ok-if-not-first}/*"), isNot(isException));
       expect(new Route("http://absolutePath/"), isNot(isException));
       expect(new Route("http://absolutePath/index.html"), isNot(isException));
-      expect(new Route("http://absolutePath/{anything-here4!@#\$%^&*()\\\n}/"), isNot(isException));
       expect(new Route("http://example//////////"), isNot(isException));
       expect(new Route("/not-ending-with-slash"),  isNot(isException));
       expect(new Route("http://example/{param}/not-ending-with-slash"),  isNot(isException));
@@ -107,6 +103,21 @@ int main(){
           "param1" : "value1",
           "param2" : "value2",
           "param3" : "value3",
+        }));
+      });
+
+      test('matching filename and its extension', () {
+        // given
+        var route = new Route('/some-file/{filename}.{ext}');
+
+        // when
+        var match = route.match("/some-file/report.doc");
+
+        // then
+        expect(route.isAbsolute, isFalse);
+        expect(match, equals({
+          'filename': 'report',
+          'ext': 'doc',
         }));
       });
 
@@ -260,6 +271,18 @@ int main(){
 
         // then
         expect(path, equals("/route/${Uri.encodeComponent(params['param'])}/"));
+      });
+
+      test('generate filename and its extension', () {
+        // given
+        var route = new Route('/some-file/{filename}.{ext}');
+        var params = {'filename': 'financial-report', 'ext': 'doc'};
+
+        // when
+        var path = route.path(params);
+
+        // then
+        expect(path, equals("/some-file/financial-report.doc"));
       });
     });
 
