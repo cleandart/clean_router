@@ -69,12 +69,12 @@ class Route {
 
     var matcherParts = new List();
     var start = 0;
-    addStatic(static) {
-      if (static != '') {
-        matcherParts.add(static.replaceAllMapped(
+    addStatic(_static) {
+      if (_static != '') {
+        matcherParts.add(_static.replaceAllMapped(
                     new RegExp(r"[.?*+^$[\]\\(){}|-]"), (c) => "\\${c.group(0)}")
                     );
-        _urlParts.add({'value': static, 'isVariable': false});
+        _urlParts.add({'value': _static, 'isVariable': false});
       }
     }
 
