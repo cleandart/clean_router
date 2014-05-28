@@ -69,8 +69,8 @@ redirectPost(url, Map postData) {
   postData.forEach((k,v) {
     InputElement input = new InputElement();
     input.type = 'hidden';
-    input.value = v;
-    input.name = k;
+    input.value = v.toString();
+    input.name = k.toString();
     form.append(input);
   });
   (window.document as HtmlDocument).body.append(form);
