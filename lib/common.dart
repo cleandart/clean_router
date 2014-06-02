@@ -202,7 +202,7 @@ class Router {
    */
   String routeUrl(String routeName, dynamic parameters) {
     String path = this.routePath(routeName, parameters);
-    return this._routes[routeName].isAbsolute ? path : url.join(this._host + path);
+    return this._routes[routeName].isAbsolute ? path : url.join(this._host, path);
   }
 
   /**
