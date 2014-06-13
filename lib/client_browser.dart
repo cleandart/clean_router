@@ -38,7 +38,9 @@ PageNavigator createPageNavigator() {
     var a = event.matchingTarget as AnchorElement;
     var href = a.href;
 
-    if (a.protocol == window.location.protocol && a.host == window.location.host) {
+    var isStatic = a.dataset['static'] != null;
+    var sameOrigin = a.protocol == window.location.protocol && a.host == window.location.host;
+    if (!isStatic && sameOrigin) {
       event.preventDefault();
       navigator.navigateToPath(a.pathname, pushState: true);
     }
