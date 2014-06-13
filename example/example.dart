@@ -24,7 +24,7 @@ void main() {
   var view = new SimpleView("Hello world!");
   var defaultView = new SimpleView("Hello default!");
 
-  router.registerRoute("example", new Route("/clean_router/example/example.html/"));
+  router.addRoute("example", new Route("/clean_router/example/example.html/"));
 
   navigator.registerView('example', view);
   navigator.registerDefaultView(defaultView);

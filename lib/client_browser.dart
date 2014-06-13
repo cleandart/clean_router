@@ -20,7 +20,6 @@ class HashHistory  {
   }
 }
 
-
 PageNavigator createPageNavigator() {
   var location = window.location;
   var urlPrefix = "${location.protocol}//${location.host}";
@@ -57,4 +56,25 @@ PageNavigator createPageNavigator() {
   }
 
   return navigator;
+}
+
+/**
+ * Creates and sends form with [postData] to [url].
+ *
+ * This method inserts new form into the [window.document.body] and sends
+ * it to the [url] by calling [FormElement.submit()] method.
+ */
+redirectPost(url, Map postData) {
+  FormElement form = new FormElement();
+  form.action = url;
+  form.method = "POST";
+  postData.forEach((k,v) {
+    InputElement input = new InputElement();
+    input.type = 'hidden';
+    input.value = v.toString();
+    input.name = k.toString();
+    form.append(input);
+  });
+  (window.document as HtmlDocument).body.append(form);
+  form.submit();
 }
