@@ -6,8 +6,13 @@ homepage: https://github.com/cleandart/clean_router
 documentation: https://github.com/cleandart/clean_router
 dependencies:
   browser: '>=0.9.0 <0.11.0'
-  clean_data: '>=0.4.0 <0.5.0'
-  path: '>=1.0.0 <2.0.0'
+  clean_sync: any
 dev_dependencies:
   hop: any
   unittest: any
+
+dependency_overrides:
+  clean_sync:
+    git:
+     url: https://github.com/cleandart/clean_sync.git
+     ref: newData

@@ -5,7 +5,7 @@
 library clean_router.client;
 import "dart:core";
 import "dart:async";
-import 'package:clean_data/clean_data.dart';
+import 'package:clean_sync/clean_cursors.dart';
 import 'common.dart';
 export 'common.dart';
 
@@ -21,7 +21,7 @@ abstract class View {
    * From the other side [PageNavigator] listens to each [data] change of [View].
    * See [PageNavigator.navigate] for more.
    */
-  void load(DataMap data);
+  void load(MapCursor data);
 
   /**
    * Called when [PageNavigator] decides this [View] is no more necessary/to be displayed.
@@ -49,7 +49,7 @@ class PageNavigator {
    * What is active.
    */
   String _activeRouteName;
-  DataMap _activeParameters;
+  MapCursor _activeParameters;
 
   /**
    * Subsription to Data shared with actual View.
@@ -174,10 +174,10 @@ class PageNavigator {
     if(_dataSubscription != null) {
       _dataSubscription.cancel();
     }
-    var data = new DataMap.from(parameters);
+    var data = new MapCursor.from(parameters);
     _activeParameters = data;
     _dataSubscription = _activeParameters.onChange.listen(
-        (ChangeSet change) => _updateHistoryState());
+        (_) => _updateHistoryState());
   }
 
   void _updateHistoryState() {
